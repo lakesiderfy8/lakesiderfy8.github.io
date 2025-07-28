@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exploring Blavatsky's Theosophy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Ethereal Dawn -->
+    <!-- Application Structure Plan: The application is designed as a single-page, vertically scrolling journey. It starts with a captivating introduction and then flows through five distinct, interactive sections: 1. Core Principles (interactive cards), 2. The Sevenfold Human (interactive diagram with a new AI reflection generator), 3. Cosmic Evolution (clickable timeline), 4. Synthesis of Influences (dynamic chart), and 5. Philosophical Inquiry (a new AI-powered Q&A section). This structure allows users to engage with complex concepts in a digestible, non-linear way. The addition of Gemini API features in sections 2 and 5 transforms the app from a static guide into a dynamic tool for personal reflection and deeper learning. -->
+    <!-- Visualization & Content Choices: 
+        - Core Principles: Report Info -> Three fundamental propositions. Goal -> Inform & Engage. Viz/Presentation -> Interactive flip-cards (HTML/CSS/JS). Interaction -> On click, the card reveals the detailed explanation. Justification -> Encourages focused reading and user participation.
+        - The Sevenfold Human: Report Info -> The 7 principles of man. Goal -> Organize, Explain & Reflect. Viz/Presentation -> Custom diagram (HTML/CSS) with a central text area and a new AI button. Interaction -> Clicking a principle shows its description. A new "✨ Generate Reflection Prompt" button (JS + Gemini API) provides a unique meditation prompt related to the selected principle. Justification -> Adds a dynamic, personal layer to the informational content.
+        - The Root Races: Report Info -> The evolutionary cycle of seven Root Races. Goal -> Show Change & Sequence. Viz/Presentation -> Horizontal timeline (HTML/CSS). Interaction -> Clicking a race displays its description. Justification -> Intuitive representation of a chronological progression.
+        - Synthesis of Influences: Report Info -> The three main influences on Theosophy. Goal -> Compare Proportions. Viz/Presentation -> Doughnut chart (Chart.js/Canvas). Interaction -> Hovering reveals influence. Justification -> Effectively visualizes contributions to the whole.
+        - Philosophical Inquiry: Report Info -> General Theosophical concepts. Goal -> Explore & Understand. Viz/Presentation -> A textarea for user questions and a display area for AI answers. Interaction -> User asks a question, Gemini API generates an answer from a Theosophical perspective. Justification -> Allows for open-ended, curiosity-driven learning beyond the pre-defined content.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Raleway', sans-serif;
+            background-color: #F5F5F3;
+            color: #3A3A3A;
+        }
+        h1, h2, h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 600;
+        }
+        .nav-link {
+            transition: color 0.3s ease, border-bottom-color 0.3s ease;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 4px;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #A0522D;
+            border-bottom-color: #A0522D;
+        }
+        .card {
+            transform-style: preserve-3d;
+            transition: transform 0.7s;
+            cursor: pointer;
+        }
+        .card.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .card-face-back {
+            transform: rotateY(180deg);
+        }
+        .principle-item {
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .principle-item.active {
+            background-color: #8B4513;
+            color: #F5F5F3;
+        }
+        .timeline-item {
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        .timeline-item:hover {
+            transform: translateY(-5px);
+        }
+        .timeline-item .dot {
+            transition: background-color 0.3s ease;
+        }
+        .timeline-item.active .dot {
+            background-color: #A0522D;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            min-height: 400px;
+            margin: auto;
+        }
+        .gemini-button {
+            transition: all 0.3s ease;
+        }
+        .gemini-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid #A0522D;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header id="header" class="bg-opacity-80 bg-[#F5F5F3] backdrop-blur-sm sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-[#3A3A3A]">Theosophy</h1>
+            <div class="hidden md:flex space-x-8">
+                <a href="#principles" class="nav-link">Principles</a>
+                <a href="#humanity" class="nav-link">The Human Form</a>
+                <a href="#races" class="nav-link">Root Races</a>
+                <a href="#influences" class="nav-link">Influences</a>
+                <a href="#inquiry" class="nav-link">Inquiry</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden text-2xl">☰</button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden bg-[#F5F5F3] py-4">
+            <a href="#principles" class="block text-center py-2 nav-link-mobile">Principles</a>
+            <a href="#humanity" class="block text-center py-2 nav-link-mobile">The Human Form</a>
+            <a href="#races" class="block text-center py-2 nav-link-mobile">Root Races</a>
+            <a href="#influences" class="block text-center py-2 nav-link-mobile">Influences</a>
+            <a href="#inquiry" class="block text-center py-2 nav-link-mobile">Inquiry</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+
+        <section id="hero" class="text-center my-16">
+            <h1 class="text-5xl md:text-7xl font-bold mb-4 tracking-wider">The Occult Philosophy</h1>
+            <h2 class="text-3xl md:text-4xl text-[#A0522D] mb-6">of Madame H.P. Blavatsky</h2>
+            <p class="max-w-3xl mx-auto text-lg leading-relaxed">
+                Journey into the complex and syncretic world of Theosophy. This interactive guide, now enhanced with AI, explores the core tenets of a philosophy that seeks to unify science, religion, and metaphysics. Discover the hidden doctrines of cosmic evolution, the sevenfold nature of humanity, and the spiritual path to enlightenment.
+            </p>
+        </section>
+
+        <section id="principles" class="py-20">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold">The Three Fundamental Principles</h2>
+                <p class="max-w-2xl mx-auto mt-4 text-md">At the heart of *The Secret Doctrine* lie three core propositions that form the bedrock of Theosophical thought. They describe the nature of ultimate reality, the cyclical life of the universe, and humanity's divine destiny. Click on each card to reveal its meaning.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="card h-64" data-card="1">
+                    <div class="card-face relative w-full h-full p-6 bg-white rounded-lg shadow-lg flex flex-col justify-center items-center text-center">
+                        <h3 class="text-2xl font-bold">The Absolute</h3>
+                        <p class="mt-2 font-light">An Omnipresent, Eternal, Boundless, and Immutable PRINCIPLE.</p>
+                    </div>
+                    <div class="card-face card-face-back absolute w-full h-full p-6 bg-[#8B4513] text-white rounded-lg shadow-lg flex flex-col justify-center">
+                        <p class="text-sm leading-relaxed">This is the ultimate, unknowable reality, a "Be-ness" rather than a being. It is the causeless cause of all, beyond human conception, impersonal and absolute.</p>
+                    </div>
+                </div>
+                <div class="card h-64" data-card="2">
+                    <div class="card-face relative w-full h-full p-6 bg-white rounded-lg shadow-lg flex flex-col justify-center items-center text-center">
+                        <h3 class="text-2xl font-bold">Cyclical Eternity</h3>
+                        <p class="mt-2 font-light">The Eternity of the Universe as a boundless plane of periodic activity.</p>
+                    </div>
+                    <div class="card-face card-face-back absolute w-full h-full p-6 bg-[#8B4513] text-white rounded-lg shadow-lg flex flex-col justify-center">
+                        <p class="text-sm leading-relaxed">The universe undergoes endless cycles of manifestation (Manvantaras) and dissolution (Pralayas), like the out-breathing and in-breathing of a "Great Breath."</p>
+                    </div>
+                </div>
+                <div class="card h-64" data-card="3">
+                    <div class="card-face relative w-full h-full p-6 bg-white rounded-lg shadow-lg flex flex-col justify-center items-center text-center">
+                        <h3 class="text-2xl font-bold">The Universal Soul</h3>
+                        <p class="mt-2 font-light">The fundamental identity of all Souls with the Universal Over-Soul.</p>
+                    </div>
+                    <div class="card-face card-face-back absolute w-full h-full p-6 bg-[#8B4513] text-white rounded-lg shadow-lg flex flex-col justify-center">
+                        <p class="text-sm leading-relaxed">Every soul is a divine spark on a mandatory pilgrimage of incarnation, governed by Karma and Reincarnation, to eventually realize its own divinity.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="humanity" class="py-20 bg-white rounded-lg shadow-xl">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold">The Sevenfold Human</h2>
+                <p class="max-w-2xl mx-auto mt-4 text-md">Theosophy posits that a human is not merely a physical body, but a complex, multi-dimensional being composed of seven principles. Click a principle to learn its role, then generate a unique reflection prompt to deepen your understanding.</p>
+            </div>
+            <div class="flex flex-col md:flex-row gap-8 items-center">
+                <div class="w-full md:w-1/2 flex flex-col gap-4">
+                    <div class="text-center mb-4">
+                        <h3 class="text-2xl text-[#A0522D]">The Higher Triad (Immortal)</h3>
+                    </div>
+                    <div class="principle-item p-4 rounded-lg border border-gray-200 text-center" data-principle="atma">Atma (Spirit)</div>
+                    <div class="principle-item p-4 rounded-lg border border-gray-200 text-center" data-principle="buddhi">Buddhi (Spiritual Soul)</div>
+                    <div class="principle-item p-4 rounded-lg border border-gray-200 text-center" data-principle="manas">Manas (Mind)</div>
+                    <div class="text-center my-4">
+                        <h3 class="text-2xl text-[#A0522D]">The Lower Quaternary (Perishable)</h3>
+                    </div>
+                    <div class="principle-item p-4 rounded-lg border border-gray-200 text-center" data-principle="kama">Kama-Rupa (Desire Body)</div>
+                    <div class="principle-item p-4 rounded-lg border border-gray-200 text-center" data-principle="prana">Prana (Life-Force)</div>
+                    <div class="principle-item p-4 rounded-lg border border-gray-200 text-center" data-principle="linga">Linga Sharira (Astral Body)</div>
+                    <div class="principle-item p-4 rounded-lg border border-gray-200 text-center" data-principle="sthula">Sthula Sharira (Physical Body)</div>
+                </div>
+                <div class="w-full md:w-1/2 p-8 bg-[#F5F5F3] rounded-lg h-[28rem] flex flex-col justify-between">
+                    <div>
+                        <h3 id="principle-title" class="text-3xl font-bold mb-4 text-[#8B4513]">Select a Principle</h3>
+                        <p id="principle-description" class="text-lg leading-relaxed">The description of the selected principle will appear here.</p>
+                    </div>
+                    <button id="reflection-button" class="gemini-button w-full mt-4 bg-[#A0522D] text-white py-2 px-4 rounded-lg hover:bg-[#8B4513] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#A0522D]" disabled>
+                        ✨ Generate Reflection Prompt
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section id="races" class="py-20">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold">Cosmic Evolution: The Root Races</h2>
+                <p class="max-w-3xl mx-auto mt-4 text-md">A controversial and complex part of Theosophy is the doctrine of Root Races. It describes humanity's evolution through seven vast epochs on different continents, many now lost to history. This is not a biological or ethnic classification, but a spiritual and physical evolutionary framework. Click on a race to view its description.</p>
+            </div>
+            <div class="relative">
+                <div class="absolute left-0 top-1/2 w-full h-0.5 bg-gray-300 -translate-y-1/2"></div>
+                <div class="relative flex justify-between">
+                    <div class="timeline-item text-center w-1/5" data-race="ethereal"><div class="dot w-6 h-6 bg-gray-300 rounded-full mx-auto"></div><p class="mt-2 font-semibold">1st: Ethereal</p></div>
+                    <div class="timeline-item text-center w-1/5" data-race="hyperborean"><div class="dot w-6 h-6 bg-gray-300 rounded-full mx-auto"></div><p class="mt-2 font-semibold">2nd: Hyperborean</p></div>
+                    <div class="timeline-item text-center w-1/5" data-race="lemurian"><div class="dot w-6 h-6 bg-gray-300 rounded-full mx-auto"></div><p class="mt-2 font-semibold">3rd: Lemurian</p></div>
+                    <div class="timeline-item text-center w-1/5" data-race="atlantean"><div class="dot w-6 h-6 bg-gray-300 rounded-full mx-auto"></div><p class="mt-2 font-semibold">4th: Atlantean</p></div>
+                    <div class="timeline-item text-center w-1/5 active" data-race="aryan"><div class="dot w-6 h-6 bg-gray-300 rounded-full mx-auto"></div><p class="mt-2 font-semibold">5th: Aryan (Current)</p></div>
+                </div>
+            </div>
+            <div id="race-display" class="mt-12 p-8 bg-white rounded-lg shadow-lg min-h-[150px]">
+                <h3 id="race-title" class="text-2xl font-bold mb-2 text-[#A0522D]"></h3>
+                <p id="race-description" class="text-md leading-relaxed"></p>
+            </div>
+        </section>
+
+        <section id="influences" class="py-20 bg-white rounded-lg shadow-xl">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold">A Synthesis of Influences</h2>
+                <p class="max-w-2xl mx-auto mt-4 text-md">Blavatsky's Theosophy is not a singular invention but a grand synthesis of various global traditions. It weaves together threads from Eastern religions, Western esoteric philosophies, and the spiritualist movements of her time into a new, complex tapestry. The chart below visualizes the primary sources of her "Secret Doctrine."</p>
+            </div>
+            <div class="chart-container">
+                <canvas id="influencesChart"></canvas>
+            </div>
+        </section>
+
+        <section id="inquiry" class="py-20">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold">✨ Philosophical Inquiry</h2>
+                <p class="max-w-2xl mx-auto mt-4 text-md">Have a question about Theosophy? Pose your query to the digital ether. Our AI, trained on the principles of esoteric philosophy, will provide an answer synthesized from Theosophical concepts.</p>
+            </div>
+            <div class="max-w-2xl mx-auto">
+                <textarea id="inquiry-input" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A0522D] focus:outline-none" rows="4" placeholder="e.g., What is the Theosophical view on free will?"></textarea>
+                <button id="inquiry-button" class="gemini-button w-full mt-4 bg-[#A0522D] text-white py-3 px-4 rounded-lg hover:bg-[#8B4513] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#A0522D] flex items-center justify-center">
+                    Ask the Masters
+                </button>
+                <div id="inquiry-response-container" class="mt-8 p-6 bg-white rounded-lg shadow-inner min-h-[100px] hidden">
+                    <div id="inquiry-loader" class="hidden mx-auto loader"></div>
+                    <p id="inquiry-response"></p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-[#3A3A3A] text-white py-8">
+        <div class="container mx-auto px-6 text-center">
+            <p>This interactive guide is an interpretation of the philosophical concepts presented in the writings of H.P. Blavatsky.</p>
+            <p class="text-sm mt-2 opacity-70">AI-generated content is for exploratory purposes and may require further research.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let currentPrinciple = null;
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    mobileMenu.classList.add('hidden');
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 100) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.addEventListener('click', () => {
+                    card.classList.toggle('is-flipped');
+                });
+            });
+            
+            async function callGemini(prompt) {
+                const apiKey = "AIzaSyCYkqbpqOxDGUKrUddBLnUqPLlANcvJEto";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                
+                const payload = {
+                    contents: [{ role: "user", parts: [{ text: prompt }] }]
+                };
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API call failed with status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        return result.candidates[0].content.parts[0].text;
+                    } else {
+                       return "Could not generate a response. The esoteric paths are sometimes clouded.";
+                    }
+                } catch (error) {
+                    console.error("Gemini API Error:", error);
+                    return "An error occurred while consulting the ether. Please try again later.";
+                }
+            }
+
+            const principleItems = document.querySelectorAll('.principle-item');
+            const principleTitle = document.getElementById('principle-title');
+            const principleDescription = document.getElementById('principle-description');
+            const reflectionButton = document.getElementById('reflection-button');
+            const principlesData = {
+                atma: { title: 'Atma (Spirit)', description: 'A universal ray of the Absolute, the divine essence within. It is the pure, eternal spirit that is one with the Universal Over-Soul.' },
+                buddhi: { title: 'Buddhi (Spiritual Soul)', description: 'The vehicle for Atma. It is the faculty of spiritual intuition, discernment, and wisdom, distinguishing right from wrong on a spiritual level.' },
+                manas: { title: 'Manas (Mind)', description: 'The "Thinker," the seat of the individual ego and self-consciousness. It has a higher aspect drawn to the spiritual and a lower aspect entangled with worldly desires.' },
+                kama: { title: 'Kama-Rupa (Desire Body)', description: 'The center of animal passions, appetites, and desires. This principle is the driving force behind most human actions motivated by personal wants.' },
+                prana: { title: 'Prana (Life-Force)', description: 'The vital energy or life principle that animates the physical body. It is the active force that sustains all living organisms.' },
+                linga: { title: 'Linga Sharira (Astral Body)', description: 'The subtle, invisible blueprint or model upon which the physical body is built. It is the energetic double of the physical form.' },
+                sthula: { title: 'Sthula Sharira (Physical Body)', description: 'The dense, material vehicle used by the soul to interact with the physical world. It is the most perishable of all the principles.' }
+            };
+
+            principleItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    principleItems.forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    currentPrinciple = item.dataset.principle;
+                    principleTitle.textContent = principlesData[currentPrinciple].title;
+                    principleDescription.textContent = principlesData[currentPrinciple].description;
+                    reflectionButton.disabled = false;
+                });
+            });
+
+            reflectionButton.addEventListener('click', async () => {
+                if (!currentPrinciple) return;
+
+                const originalButtonText = reflectionButton.innerHTML;
+                reflectionButton.innerHTML = '<div class="loader mx-auto"></div>';
+                reflectionButton.disabled = true;
+
+                const prompt = `From a Theosophical perspective based on H.P. Blavatsky's teachings, generate a short, one-paragraph reflection or meditation prompt about the human principle of "${principlesData[currentPrinciple].title}". The prompt should be insightful and encourage personal contemplation.`;
+                
+                const reflectionText = await callGemini(prompt);
+                principleDescription.textContent = reflectionText;
+
+                reflectionButton.innerHTML = originalButtonText;
+                reflectionButton.disabled = false;
+            });
+
+            const timelineItems = document.querySelectorAll('.timeline-item');
+            const raceTitle = document.getElementById('race-title');
+            const raceDescription = document.getElementById('race-description');
+            const racesData = {
+                ethereal: { title: 'First Root Race: Ethereal', description: 'A race of formless, non-physical beings composed of astral or ethereal matter. They were sexless and reproduced through a process similar to fission.' },
+                hyperborean: { title: 'Second Root Race: Hyperborean', description: 'Inhabited a lost northern continent. These beings were also non-physical and non-corporeal, representing a more defined but still ethereal stage of evolution.' },
+                lemurian: { title: 'Third Root Race: Lemurian', description: 'Lived on the lost continent of Lemuria. During this epoch, humanity developed solid physical bodies, separated into two sexes, and received the "spark" of mind, marking the birth of self-awareness.' },
+                atlantean: { title: 'Fourth Root Race: Atlantean', description: 'Flourished on the legendary continent of Atlantis. This race developed a highly advanced civilization but ultimately fell due to the misuse of psychic and spiritual powers, leading to their demise.' },
+                aryan: { title: 'Fifth Root Race: Aryan (Current)', description: 'This is our current humanity. In Theosophical terms, "Aryan" refers to the entire human family of the fifth epoch, not a specific ethnicity. Its purpose is the development of the intellect and rational mind.' }
+            };
+
+            function updateRaceInfo(raceKey) {
+                timelineItems.forEach(i => {
+                    i.classList.remove('active');
+                    if(i.dataset.race === raceKey) {
+                        i.classList.add('active');
+                    }
+                });
+                raceTitle.textContent = racesData[raceKey].title;
+                raceDescription.textContent = racesData[raceKey].description;
+            }
+
+            timelineItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const raceKey = item.dataset.race;
+                    updateRaceInfo(raceKey);
+                });
+            });
+            updateRaceInfo('aryan');
+
+            const inquiryInput = document.getElementById('inquiry-input');
+            const inquiryButton = document.getElementById('inquiry-button');
+            const inquiryResponseContainer = document.getElementById('inquiry-response-container');
+            const inquiryLoader = document.getElementById('inquiry-loader');
+            const inquiryResponse = document.getElementById('inquiry-response');
+
+            inquiryButton.addEventListener('click', async () => {
+                const question = inquiryInput.value;
+                if (!question.trim()) return;
+
+                inquiryResponseContainer.classList.remove('hidden');
+                inquiryResponse.classList.add('hidden');
+                inquiryLoader.classList.remove('hidden');
+                inquiryButton.disabled = true;
+
+                const prompt = `You are an expert on H.P. Blavatsky's Theosophy. Answer the following question strictly from a Theosophical perspective, as if you were a learned member of the Theosophical Society. Keep the answer concise and to the point. Question: "${question}"`;
+                
+                const answer = await callGemini(prompt);
+
+                inquiryResponse.textContent = answer;
+                inquiryLoader.classList.add('hidden');
+                inquiryResponse.classList.remove('hidden');
+                inquiryButton.disabled = false;
+            });
+
+            const ctx = document.getElementById('influencesChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Eastern Religions (Hinduism, Buddhism)', 'Western Esotericism (Gnosticism, Hermeticism)', '19th-Century Spiritualism'],
+                    datasets: [{
+                        label: 'Synthesis of Influences',
+                        data: [50, 35, 15],
+                        backgroundColor: ['rgba(139, 69, 19, 0.7)', 'rgba(160, 82, 45, 0.7)', 'rgba(210, 105, 30, 0.7)'],
+                        borderColor: ['#8B4513', '#A0522D', '#D2691E'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#3A3A3A', font: { family: "'Raleway', sans-serif", size: 14 }}},
+                        tooltip: { callbacks: { label: (c) => `${c.label}: ${c.parsed}%` }}
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
