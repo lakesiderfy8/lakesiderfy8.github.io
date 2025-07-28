@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Report: The Wisdom of Simone Weil</title>
+    <!-- Chosen Palette: Calm & Authoritative (Adapted from provided image) -->
+    <!-- Application Structure Plan: The SPA is structured as a narrative scroll, guiding the user from introduction to application. It starts with 'Who Was Simone Weil?' to establish context. It then moves to 'Key Lessons from Waiting for God', a thematic section breaking down her core spiritual ideas into digestible cards. The next section, 'Confronting The Beast', addresses her social critique, using an interactive chart to compare modern manifestations of this concept. 'Reclaiming Work from Affliction' uses a process flow diagram to present her philosophy on labor in an actionable way. A new interactive section powered by the Gemini API allows for personal reflection, making the philosophy directly applicable. This thematic, top-down structure was chosen for usability, allowing a user unfamiliar with Weil to build understanding progressively. -->
+    <!-- Visualization & Content Choices: 
+        - Intro/Key Lessons Sections: Goal: Inform/Organize. Method: Styled text cards with Unicode icons. Justification: Simple, clear, and breaks down complex ideas into parallel chunks. No library needed.
+        - 'The Beast' Section: Goal: Compare. Method: Chart.js Horizontal Bar Chart. Justification: Effectively compares the perceived influence of different societal forces. Library: Chart.js (Canvas).
+        - 'Reclaiming Work' Section: Goal: Organize/Process. Method: HTML/CSS Flowchart. Justification: Clearly visualizes the three-step process for integrating her thought. No library needed.
+        - Gemini Reflection Section: Goal: Apply/Interact. Method: User input textarea with a button to call the Gemini API. Justification: This provides a dynamic, personalized engagement with Weil's philosophy, allowing users to see how her ideas apply to their own context. Library: Gemini API via fetch.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600&family=Source+Sans+Pro:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+            background-color: #F8F7F4; /* Warm Neutral Background */
+            color: #4A4A4A;
+        }
+        h1, h2, h3, h4 {
+            font-family: 'Lora', serif;
+            color: #2C3E50; /* Dark Blue-Gray */
+        }
+        .card {
+            background-color: #FFFFFF;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .flow-step {
+            border: 2px solid #3498DB; /* Accent Blue */
+            background-color: #FFFFFF;
+        }
+        .flow-arrow {
+            color: #3498DB;
+        }
+        .accent-bg {
+            background-color: #3498DB;
+        }
+        .accent-text {
+            color: #3498DB;
+        }
+        .secondary-text {
+            color: #8D99AE;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498DB;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <main class="container mx-auto px-4 py-8 md:py-12">
+
+        <section id="introduction" class="text-center mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">The Enduring Wisdom of Simone Weil</h1>
+            <p class="text-xl secondary-text max-w-3xl mx-auto">An interactive exploration of her profound insights on attention, suffering, and the nature of modern life.</p>
+        </section>
+
+        <section id="core-concepts" class="mb-16">
+            <div class="card">
+                <h2 class="text-3xl font-bold mb-6 text-center">I. Key Lessons from 'Waiting for God'</h2>
+                <p class="text-center text-lg secondary-text mb-10 max-w-4xl mx-auto">Weil's spirituality is not about comfort, but about a radical reorientation of the soul. She presents a demanding path towards a God often experienced through absence, requiring profound inner work. Below are three foundational concepts from her writings.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="text-center p-6 bg-gray-50 rounded-lg">
+                        <div class="text-5xl mb-4 accent-text">👁️</div>
+                        <h3 class="text-2xl font-semibold mb-3">The Power of Attention</h3>
+                        <p>For Weil, the purest form of prayer is complete, selfless attention. Whether directed at a geometry problem or another person, this focused, loving attention develops a spiritual "muscle," creating a direct path to the divine and to true compassion for our neighbors.</p>
+                    </div>
+                    <div class="text-center p-6 bg-gray-50 rounded-lg">
+                        <div class="text-5xl mb-4 accent-text">⛓️</div>
+                        <h3 class="text-2xl font-semibold mb-3">Affliction (Malheur)</h3>
+                        <p>More than mere suffering, affliction is a soul-crushing force that treats a person as an inert object. It's a combination of physical, social, and psychological pain that erases one's sense of self. Weil experienced this in factories, and taught that true compassion must grasp this dehumanizing depth.</p>
+                    </div>
+                    <div class="text-center p-6 bg-gray-50 rounded-lg">
+                        <div class="text-5xl mb-4 accent-text">🌌</div>
+                        <h3 class="text-2xl font-semibold mb-3">Decreation</h3>
+                        <p>A mystical concept where we must "decreate" our own ego and desires to make space for God. It is not an act of will, but of making ourselves receptive. We can't find God; we can only empty ourselves and wait, attentively, for grace to fill the void.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="the-beast" class="mb-16">
+            <div class="card">
+                <h2 class="text-3xl font-bold mb-6 text-center">II. Confronting 'The Great Beast'</h2>
+                <p class="text-center text-lg secondary-text mb-10 max-w-4xl mx-auto">Weil used Plato's concept of "the Great Beast" to describe the collective mind of society—the powerful force of social pressure, public opinion, and group identity that demands conformity and replaces individual thought with collective slogans. It offers belonging at the cost of conscience.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <h3 class="text-2xl font-semibold mb-4 text-center">Modern Manifestations of 'The Beast'</h3>
+                        <p class="text-center secondary-text mb-6">The chart below visualizes the perceived influence of various modern forces that encourage reaction over reflection, a key symptom of The Beast's presence in contemporary society.</p>
+                        <div class="chart-container">
+                            <canvas id="beastChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-2xl font-semibold mb-6">How to Resist</h3>
+                        <ul class="space-y-6">
+                            <li class="flex items-start">
+                                <span class="accent-bg text-white rounded-full h-8 w-8 text-center leading-8 font-bold mr-4 flex-shrink-0">1</span>
+                                <div>
+                                    <h4 class="font-semibold text-lg">Cultivate Solitude and Silence</h4>
+                                    <p class="secondary-text">Resist constant noise. Create space for your own thoughts to surface, free from the crowd's influence.</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="accent-bg text-white rounded-full h-8 w-8 text-center leading-8 font-bold mr-4 flex-shrink-0">2</span>
+                                <div>
+                                    <h4 class="font-semibold text-lg">Practice Intellectual Honesty</h4>
+                                    <p class="secondary-text">Rigorously question your own side's slogans. Ask: "Is this true, or just what my group believes?"</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="accent-bg text-white rounded-full h-8 w-8 text-center leading-8 font-bold mr-4 flex-shrink-0">3</span>
+                                <div>
+                                    <h4 class="font-semibold text-lg">Value Attention Over Opinion</h4>
+                                    <p class="secondary-text">Instead of rushing to judgment, pay attention to the complexity of an issue or person. Attention is precious.</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="work-application">
+             <div class="card">
+                <h2 class="text-3xl font-bold mb-6 text-center">III. Reclaiming Work from Affliction</h2>
+                <p class="text-center text-lg secondary-text mb-10 max-w-4xl mx-auto">Weil's critique of factory work applies to modern labor, where many experience affliction through fragmented attention and meaningless tasks. Her philosophy offers a path to restore dignity to work.</p>
+                <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4 mb-12">
+                    <div class="flow-step rounded-lg p-6 text-center w-full md:w-1/3">
+                        <h3 class="text-xl font-semibold mb-2">1. Reunite Thought & Action</h3>
+                        <p class="secondary-text">Bring conscious intent to your work. Ask "why" and perform tasks with care and attention. Resist mindless productivity.</p>
+                    </div>
+                    <div class="flow-arrow text-4xl transform rotate-90 md:rotate-0">→</div>
+                    <div class="flow-step rounded-lg p-6 text-center w-full md:w-1/3">
+                        <h3 class="text-xl font-semibold mb-2">2. Recognize Dignity in All Labor</h3>
+                        <p class="secondary-text">Challenge the social hierarchy of work. Any labor, from cleaning to coding, can be sacred if done with attention.</p>
+                    </div>
+                    <div class="flow-arrow text-4xl transform rotate-90 md:rotate-0">→</div>
+                    <div class="flow-step rounded-lg p-6 text-center w-full md:w-1/3">
+                        <h3 class="text-xl font-semibold mb-2">3. Create Pockets of Meaning</h3>
+                        <p class="secondary-text">If your job feels meaningless, find "rootedness" elsewhere—in hobbies, relationships, or service—to withstand its uprooting force.</p>
+                    </div>
+                </div>
+                
+                <div class="mt-16 border-t pt-10">
+                    <h3 class="text-2xl font-bold text-center mb-4">✨ Personal Reflection: Apply Weil's Wisdom</h3>
+                    <p class="text-center secondary-text mb-6 max-w-2xl mx-auto">Describe a personal work situation or a modern societal problem below. Gemini will generate a short reflection, analyzing it through the lens of Simone Weil's philosophy.</p>
+                    <div class="max-w-xl mx-auto">
+                        <textarea id="userInput" class="w-full p-3 border border-gray-300 rounded-md h-28 focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition" placeholder="e.g., 'My office job feels repetitive and meaningless...' or 'The constant political arguments online...'"></textarea>
+                        <button id="generateReflection" class="w-full mt-4 accent-bg text-white font-bold py-3 px-4 rounded-md hover:bg-blue-700 transition duration-300 flex items-center justify-center">
+                            Generate Reflection
+                        </button>
+                        <div id="reflectionResult" class="mt-6 p-4 border-l-4 border-blue-200 bg-blue-50 rounded-md min-h-[50px] hidden"></div>
+                         <div id="loader" class="mx-auto mt-6 loader hidden"></div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <footer class="text-center mt-12 pt-8 border-t border-gray-200">
+            <p class="text-lg secondary-text">Simone Weil offers no easy answers, only a radical path toward reclaiming our humanity through attention, empathy, and courage.</p>
+        </footer>
+
+    </main>
+
+    <script>
+        const wrapLabel = (str, maxLen) => {
+            if (typeof str !== 'string' || str.length <= maxLen) {
+                return str;
+            }
+            const words = str.split(' ');
+            let lines = [];
+            let currentLine = '';
+            for (const word of words) {
+                if ((currentLine + ' ' + word).length > maxLen && currentLine.length > 0) {
+                    lines.push(currentLine);
+                    currentLine = word;
+                } else {
+                    currentLine += (currentLine.length === 0 ? '' : ' ') + word;
+                }
+            }
+            lines.push(currentLine);
+            return lines;
+        };
+
+        const beastChartCtx = document.getElementById('beastChart').getContext('2d');
+        new Chart(beastChartCtx, {
+            type: 'bar',
+            data: {
+                labels: [
+                    wrapLabel('Social Media Echo Chambers', 16),
+                    wrapLabel('Rigid Political Discourse', 16),
+                    wrapLabel('Corporate Jargon and Groupthink', 16),
+                    wrapLabel('Cancel Culture and Purity Tests', 16)
+                ],
+                datasets: [{
+                    label: 'Perceived Influence',
+                    data: [90, 85, 78, 75],
+                    backgroundColor: ['#3498DB', '#5DADE2', '#85C1E9', '#AED6F1'],
+                    borderColor: '#2C3E50',
+                    borderWidth: 0,
+                    borderRadius: 4,
+                    barPercentage: 0.7,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: {
+                            display: false,
+                            drawBorder: false,
+                        },
+                        ticks: {
+                            display: false,
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false,
+                            drawBorder: false,
+                        },
+                        ticks: {
+                            font: {
+                                size: 14,
+                                family: "'Source Sans Pro', sans-serif",
+                            },
+                            color: '#4A4A4A'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: '#2C3E50',
+                        titleFont: {
+                            size: 14,
+                            family: "'Lora', serif",
+                        },
+                        bodyFont: {
+                            size: 12,
+                            family: "'Source Sans Pro', sans-serif",
+                        },
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                const item = tooltipItems[0];
+                                let label = item.chart.data.labels[item.dataIndex];
+                                if (Array.isArray(label)) {
+                                  return label.join(' ');
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const generateBtn = document.getElementById('generateReflection');
+        const userInput = document.getElementById('userInput');
+        const reflectionResult = document.getElementById('reflectionResult');
+        const loader = document.getElementById('loader');
+
+        generateBtn.addEventListener('click', async () => {
+            const userText = userInput.value;
+            if (!userText.trim()) {
+                reflectionResult.innerHTML = '<p class="text-red-600">Please enter a situation or problem to reflect upon.</p>';
+                reflectionResult.classList.remove('hidden');
+                return;
+            }
+
+            loader.classList.remove('hidden');
+            reflectionResult.classList.add('hidden');
+            generateBtn.disabled = true;
+            generateBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            const prompt = `You are an expert on the philosophy of Simone Weil. A user has described their situation: "${userText}". Analyze this situation through the lens of Simone Weil's core concepts of 'attention,' 'affliction,' and 'the Great Beast.' Provide a short, insightful, and compassionate paragraph of reflection for the user. Do not give direct advice, but offer a philosophical perspective based strictly on her thought. Frame the response as a reflection, not a direct answer to a question.`;
+            
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+            const payload = { contents: chatHistory };
+            const apiKey = "AIzaSyCYkqbpqOxDGUKrUddBLnUqPLlANcvJEto"; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    reflectionResult.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`;
+                } else {
+                    reflectionResult.innerHTML = '<p class="text-red-600">Sorry, I could not generate a reflection at this time. The response from the model was empty.</p>';
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                reflectionResult.innerHTML = `<p class="text-red-600">An error occurred while generating the reflection. Please try again later. Details: ${error.message}</p>`;
+            } finally {
+                loader.classList.add('hidden');
+                reflectionResult.classList.remove('hidden');
+                generateBtn.disabled = false;
+                generateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        });
+
+    </script>
+
+</body>
+</html>
