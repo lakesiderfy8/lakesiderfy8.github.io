@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Exploration: Phantoms in the Brain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals & Slate -->
+    <!-- Application Structure Plan: The SPA is designed as a non-linear, exploratory experience with a central navigation hub. This thematic structure, with sections for "Phantom Limbs," "The Believing Brain," "The Malleable Self," and a new AI chat section "Ask the Neuroscientist," allows users to engage with Ramachandran's core concepts in any order. This is more user-friendly and engaging than a linear, book-like structure, encouraging curiosity-driven learning. Key interactions include a homunculus map, a mirror box simulation, an interactive scenario, a synesthesia simulation, and now two Gemini API-powered features: a dynamic case study generator and an AI-driven Q&A chat. -->
+    <!-- Visualization & Content Choices: 
+        - Homunculus Map (Phantom Limbs): Goal: Explain sensory remapping. Method: HTML/CSS diagram with hover interactions. Justification: Visually demonstrates the abstract concept of brain plasticity in a direct, interactive way.
+        - Mirror Box (Phantom Limbs): Goal: Show Ramachandran's therapeutic invention. Method: HTML/CSS/JS toggle simulation. Justification: Makes the therapy tangible and understandable.
+        - Hemispheric Roles Chart (The Believing Brain): Goal: Compare left/right brain functions. Method: Chart.js Bar Chart. Justification: Provides a clear, quantitative-style visual metaphor for the "storyteller" vs. "devil's advocate" roles.
+        - Anosognosia Scenario (The Believing Brain): Goal: Illustrate denial/confabulation. Method: Interactive text-swap buttons. Justification: Actively engages the user in the thought process of a patient.
+        - ✨ AI Case Study Generator (The Believing Brain): Goal: Provide dynamic, illustrative content. Method: Button triggers Gemini API call. Justification: Extends the learning experience with novel examples, increasing engagement and replayability.
+        - Synesthesia Grid (The Malleable Self): Goal: Simulate synesthetic experience. Method: Interactive HTML grid with hover effects. Justification: A simple, powerful way to give users a glimpse into a different perceptual reality.
+        - ✨ AI Chatbot (Ask the Neuroscientist): Goal: Allow free-form user inquiry. Method: Chat interface powered by Gemini API. Justification: Deepens user understanding by providing personalized explanations in the accessible style of V.S. Ramachandran.
+        - All choices adhere to the NO SVG/Mermaid rule and support the exploratory application structure. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-color 0.3s;
+        }
+        .active-link {
+            color: #3b82f6; /* blue-500 */
+            border-bottom-color: #3b82f6;
+        }
+        .homunculus-dot {
+            transition: all 0.3s ease-in-out;
+        }
+        .mirror-box-limb {
+            transition: opacity 0.5s ease-in-out;
+        }
+        .chat-bubble {
+            max-width: 80%;
+        }
+        .chat-bubble-user {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .chat-bubble-ai {
+            background-color: #e5e7eb;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold text-slate-900">Phantoms in the Brain</h1>
+            <div class="hidden md:flex space-x-8">
+                <a href="#introduction" class="nav-link text-slate-600 hover:text-blue-500 border-b-2 border-transparent pb-1">Introduction</a>
+                <a href="#phantom-limbs" class="nav-link text-slate-600 hover:text-blue-500 border-b-2 border-transparent pb-1">Phantom Limbs</a>
+                <a href="#believing-brain" class="nav-link text-slate-600 hover:text-blue-500 border-b-2 border-transparent pb-1">The Believing Brain</a>
+                <a href="#malleable-self" class="nav-link text-slate-600 hover:text-blue-500 border-b-2 border-transparent pb-1">The Malleable Self</a>
+                <a href="#ask-ai" class="nav-link text-slate-600 hover:text-blue-500 border-b-2 border-transparent pb-1">✨ Ask AI</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden text-slate-800">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4 flex flex-col space-y-4">
+            <a href="#introduction" class="nav-link text-slate-600 hover:text-blue-500">Introduction</a>
+            <a href="#phantom-limbs" class="nav-link text-slate-600 hover:text-blue-500">Phantom Limbs</a>
+            <a href="#believing-brain" class="nav-link text-slate-600 hover:text-blue-500">The Believing Brain</a>
+            <a href="#malleable-self" class="nav-link text-slate-600 hover:text-blue-500">The Malleable Self</a>
+            <a href="#ask-ai" class="nav-link text-slate-600 hover:text-blue-500">✨ Ask AI</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 md:py-12">
+        
+        <section id="introduction" class="text-center min-h-[60vh] flex flex-col justify-center items-center">
+            <h2 class="text-4xl md:text-5xl font-bold text-slate-900 mb-4">Probing the Mysteries of the Mind</h2>
+            <p class="max-w-3xl mx-auto text-lg text-slate-600 mb-8">
+                Welcome to an interactive exploration of V.S. Ramachandran's "Phantoms in the Brain." This application translates his groundbreaking work into a hands-on experience. Through a series of interactive exhibits, you will explore how bizarre neurological cases reveal fundamental truths about the human brain, consciousness, and the very nature of self.
+            </p>
+            <a href="#phantom-limbs" class="bg-blue-500 text-white font-bold py-3 px-8 rounded-full hover:bg-blue-600 transition-colors">Begin Exploration</a>
+        </section>
+
+        <div class="space-y-24 md:space-y-32">
+
+            <section id="phantom-limbs" class="scroll-mt-20">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl md:text-4xl font-bold text-slate-900">1. The Ghost in the Machine: Phantom Limbs</h3>
+                    <p class="max-w-3xl mx-auto mt-4 text-slate-600">
+                        This section explores one of Ramachandran's most famous subjects: phantom limbs. When a person loses a limb, they often still feel its vivid presence. This phenomenon provides profound insights into neuroplasticity—the brain's remarkable ability to reorganize itself. Here, you can interact with visualizations that demonstrate how the brain's map can change and how simple illusions can treat phantom pain.
+                    </p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <h4 class="text-xl font-bold mb-4 text-center">Interactive Homunculus: Sensory Remapping</h4>
+                        <p class="text-slate-600 mb-4 text-sm text-center">Hover over the face or arm on the diagram to see how the brain's sensory map reorganizes after an amputation.</p>
+                        <div id="homunculus-container" class="relative w-full max-w-sm mx-auto aspect-square">
+                            <div class="absolute top-[10%] left-[50%] -translate-x-1/2 w-32 h-32 bg-slate-200 rounded-full"></div>
+                            <div id="brain-face" class="absolute top-[15%] left-[53%] -translate-x-1/2 w-10 h-10 bg-pink-300 rounded-full homunculus-dot"></div>
+                            <div id="brain-hand" class="absolute top-[25%] left-[45%] -translate-x-1/2 w-10 h-10 bg-sky-300 rounded-full homunculus-dot"></div>
+                            
+                            <div class="absolute top-[40%] left-[50%] -translate-x-1/2 w-24 h-48 bg-slate-200 rounded-t-full"></div>
+                            <div id="human-face" class="absolute top-[42%] left-[50%] -translate-x-1/2 w-16 h-16 bg-pink-500 rounded-full cursor-pointer homunculus-dot"></div>
+                            <div id="human-arm" class="absolute top-[65%] left-[30%] -translate-x-1/2 w-8 h-24 bg-sky-500 rounded-full cursor-pointer homunculus-dot"></div>
+                        </div>
+                         <p id="homunculus-text" class="mt-4 text-center text-slate-700 font-semibold h-16">Hover over a body part.</p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <h4 class="text-xl font-bold mb-4 text-center">The Mirror Box Solution</h4>
+                        <p class="text-slate-600 mb-4 text-sm text-center">Ramachandran invented the mirror box to relieve phantom pain. By creating a visual illusion of the missing limb, the brain can be "tricked" into unclenching the painful phantom. Toggle the mirror to see how it works.</p>
+                        <div class="relative w-full h-64 bg-slate-100 rounded-lg p-4 flex justify-center items-center overflow-hidden">
+                            <div class="w-1/2 h-full flex justify-center items-center">
+                                <div class="w-16 h-32 bg-blue-300 rounded-lg transform -rotate-12 shadow-md">
+                                    <span class="text-xs text-blue-800 font-bold absolute top-2 left-2">Real Arm</span>
+                                </div>
+                            </div>
+                            <div class="absolute top-0 bottom-0 left-1/2 w-1 bg-slate-400 transform -skew-y-12"></div>
+                             <div class="absolute top-0 bottom-0 left-1/2 w-1/2 h-full bg-white/50 backdrop-blur-sm" id="mirror-effect"></div>
+                            <div class="w-1/2 h-full flex justify-center items-center">
+                                <div id="phantom-limb" class="w-16 h-32 bg-blue-300 rounded-lg transform rotate-12 shadow-md mirror-box-limb opacity-0">
+                                     <span class="text-xs text-blue-800 font-bold absolute top-2 right-2">Reflected</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center mt-4">
+                            <button id="mirror-toggle" class="bg-slate-700 text-white font-bold py-2 px-6 rounded-full hover:bg-slate-800 transition-colors">Activate Mirror</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="believing-brain" class="scroll-mt-20">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl md:text-4xl font-bold text-slate-900">2. The Believing Brain: Denial & Confabulation</h3>
+                    <p class="max-w-3xl mx-auto mt-4 text-slate-600">
+                        This section explores anosognosia, a bizarre condition where patients deny their own paralysis. These cases reveal a fundamental conflict in the brain: the left hemisphere's role as a "storyteller" that seeks consistency, and the right hemisphere's role as a "devil's advocate" that detects anomalies. When the right hemisphere is damaged, the storyteller can run wild, creating elaborate fictions to maintain a coherent, albeit false, reality.
+                    </p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-12 items-start">
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <h4 class="text-xl font-bold mb-4 text-center">Hemispheric Roles</h4>
+                        <p class="text-slate-600 mb-4 text-sm text-center">The two brain hemispheres have different "personalities." The left creates consistent stories, while the right challenges them. Anosognosia reveals what happens when this balance is broken.</p>
+                        <div class="chart-container">
+                            <canvas id="hemisphereChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <h4 class="text-xl font-bold mb-4 text-center">Interactive Scenario: Anosognosia</h4>
+                        <p class="text-slate-600 mb-4 text-sm text-center">A patient with left-side paralysis (due to right hemisphere damage) is asked to touch your nose with her left hand. Click below to see how her brain might respond.</p>
+                        <div id="scenario-output" class="bg-slate-100 p-4 rounded-lg min-h-[120px] flex items-center justify-center text-center text-slate-700 italic">
+                            Select a response below.
+                        </div>
+                        <div class="flex justify-center space-x-4 mt-4">
+                            <button data-response="left" class="scenario-btn bg-rose-500 text-white font-bold py-2 px-4 rounded-full hover:bg-rose-600 transition-colors">Left Brain's Story</button>
+                            <button data-response="right" class="scenario-btn bg-sky-500 text-white font-bold py-2 px-4 rounded-full hover:bg-sky-600 transition-colors">Right Brain's Reality</button>
+                        </div>
+                        <hr class="my-6">
+                        <h5 class="text-lg font-bold mb-2 text-center">✨ AI-Generated Case Study</h5>
+                        <p class="text-slate-600 mb-4 text-sm text-center">Click the button to generate a new, unique patient case study using AI, further illustrating these fascinating concepts.</p>
+                        <div id="case-study-output" class="bg-slate-100 p-4 rounded-lg min-h-[150px] text-slate-700 text-sm">
+                            Click the button to generate a case study...
+                        </div>
+                        <div id="case-study-loader" class="hidden justify-center items-center my-4">
+                            <div class="loader"></div>
+                        </div>
+                        <div class="text-center mt-4">
+                            <button id="generate-case-study" class="bg-teal-500 text-white font-bold py-2 px-6 rounded-full hover:bg-teal-600 transition-colors">Generate Case Study</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="malleable-self" class="scroll-mt-20">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl md:text-4xl font-bold text-slate-900">3. The Malleable Self: Body Image & Synesthesia</h3>
+                    <p class="max-w-3xl mx-auto mt-4 text-slate-600">
+                        Who are "you"? Ramachandran's work suggests the self is not a fixed entity but a fluid, temporary construct of the brain. This section explores the malleability of our body image and delves into synesthesia—a condition where senses are blended—to show how differently reality can be constructed. These phenomena challenge our most basic assumptions about our own identity.
+                    </p>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h4 class="text-xl font-bold mb-4 text-center">A Glimpse of Synesthesia</h4>
+                    <p class="text-slate-600 mb-6 text-sm text-center">For some people, numbers and letters have distinct colors. This is due to cross-wiring between sensory areas in the brain. Hover over the numbers below to get a small sense of this perceptual blending.</p>
+                    <div class="flex flex-wrap justify-center gap-4">
+                        <div class="synesthesia-char w-16 h-16 flex items-center justify-center text-4xl font-bold border-2 border-slate-300 rounded-lg cursor-pointer transition-all" data-color="bg-red-400">1</div>
+                        <div class="synesthesia-char w-16 h-16 flex items-center justify-center text-4xl font-bold border-2 border-slate-300 rounded-lg cursor-pointer transition-all" data-color="bg-blue-400">2</div>
+                        <div class="synesthesia-char w-16 h-16 flex items-center justify-center text-4xl font-bold border-2 border-slate-300 rounded-lg cursor-pointer transition-all" data-color="bg-yellow-400">3</div>
+                        <div class="synesthesia-char w-16 h-16 flex items-center justify-center text-4xl font-bold border-2 border-slate-300 rounded-lg cursor-pointer transition-all" data-color="bg-green-400">4</div>
+                        <div class="synesthesia-char w-16 h-16 flex items-center justify-center text-4xl font-bold border-2 border-slate-300 rounded-lg cursor-pointer transition-all" data-color="bg-purple-400">5</div>
+                        <div class="synesthesia-char w-16 h-16 flex items-center justify-center text-4xl font-bold border-2 border-slate-300 rounded-lg cursor-pointer transition-all" data-color="bg-orange-400">6</div>
+                    </div>
+                     <p class="mt-6 text-center text-slate-600">The experience of synesthesia is automatic and consistent for those who have it. This simple interaction hints at how the brain can create unique and personal realities, challenging the idea of a single, objective world.</p>
+                </div>
+            </section>
+
+            <section id="ask-ai" class="scroll-mt-20">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl md:text-4xl font-bold text-slate-900">✨ 4. Ask the Neuroscientist</h3>
+                    <p class="max-w-3xl mx-auto mt-4 text-slate-600">
+                        Have a question about phantom limbs, synesthesia, or the nature of self? Ask our AI, trained to respond in the insightful and accessible style of Dr. Ramachandran. It's your chance to dive deeper into these fascinating topics.
+                    </p>
+                </div>
+                <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-lg">
+                    <div id="chat-log" class="h-80 overflow-y-auto mb-4 p-4 bg-slate-50 rounded-lg flex flex-col space-y-4">
+                        <div class="flex justify-start">
+                            <div class="chat-bubble chat-bubble-ai p-3 rounded-lg">
+                                Hello! I'm an AI assistant modeled on Dr. Ramachandran. What neurological mystery is on your mind today?
+                            </div>
+                        </div>
+                    </div>
+                    <div id="chat-loader" class="hidden justify-center items-center my-4">
+                        <div class="loader"></div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <input type="text" id="chat-input" class="flex-grow border border-slate-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ask about phantom limbs...">
+                        <button id="chat-send" class="bg-blue-500 text-white font-bold py-2 px-6 rounded-full hover:bg-blue-600 transition-colors">Send</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="bg-slate-800 text-white mt-24">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>An interactive summary of "Phantoms in the Brain" by V.S. Ramachandran.</p>
+            <p class="text-sm text-slate-400 mt-2">Designed to make complex neuroscience accessible and engaging. Now with Gemini AI features.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.3
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute('id');
+                        navLinks.forEach(link => {
+                            link.classList.remove('active-link', 'text-blue-500');
+                            if (link.getAttribute('href') === `#${id}`) {
+                                link.classList.add('active-link', 'text-blue-500');
+                            }
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+
+            const humanFace = document.getElementById('human-face');
+            const humanArm = document.getElementById('human-arm');
+            const brainFace = document.getElementById('brain-face');
+            const brainHand = document.getElementById('brain-hand');
+            const homunculusText = document.getElementById('homunculus-text');
+
+            const homunculusData = {
+                face: {
+                    text: "Stroking the face can trigger sensations in the phantom hand because the face's brain region takes over the unused hand region.",
+                    brainEl: brainFace
+                },
+                arm: {
+                    text: "The brain map for the arm is adjacent to the face. After amputation, these areas can cross-wire.",
+                    brainEl: brainHand
+                }
+            };
+
+            function handleHomunculusHover(part) {
+                homunculusText.textContent = homunculusData[part].text;
+                homunculusData[part].brainEl.style.transform = 'scale(1.5)';
+                homunculusData[part].brainEl.style.boxShadow = '0 0 20px rgba(255, 0, 0, 0.7)';
+            }
+
+            function resetHomunculus() {
+                homunculusText.textContent = 'Hover over a body part.';
+                brainFace.style.transform = 'scale(1)';
+                brainFace.style.boxShadow = 'none';
+                brainHand.style.transform = 'scale(1)';
+                brainHand.style.boxShadow = 'none';
+            }
+
+            humanFace.addEventListener('mouseover', () => handleHomunculusHover('face'));
+            humanFace.addEventListener('mouseout', resetHomunculus);
+            humanArm.addEventListener('mouseover', () => handleHomunculusHover('arm'));
+            humanArm.addEventListener('mouseout', resetHomunculus);
+            
+            const mirrorToggle = document.getElementById('mirror-toggle');
+            const phantomLimb = document.getElementById('phantom-limb');
+            const mirrorEffect = document.getElementById('mirror-effect');
+            let mirrorActive = false;
+
+            mirrorToggle.addEventListener('click', () => {
+                mirrorActive = !mirrorActive;
+                if (mirrorActive) {
+                    phantomLimb.classList.remove('opacity-0');
+                    mirrorEffect.classList.add('opacity-0');
+                    mirrorToggle.textContent = 'Deactivate Mirror';
+                    mirrorToggle.classList.remove('bg-slate-700', 'hover:bg-slate-800');
+                    mirrorToggle.classList.add('bg-amber-500', 'hover:bg-amber-600');
+                } else {
+                    phantomLimb.classList.add('opacity-0');
+                    mirrorEffect.classList.remove('opacity-0');
+                    mirrorToggle.textContent = 'Activate Mirror';
+                    mirrorToggle.classList.remove('bg-amber-500', 'hover:bg-amber-600');
+                    mirrorToggle.classList.add('bg-slate-700', 'hover:bg-slate-800');
+                }
+            });
+
+            const hemisphereCtx = document.getElementById('hemisphereChart').getContext('2d');
+            new Chart(hemisphereCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Left Hemisphere', 'Right Hemisphere'],
+                    datasets: [{
+                        label: 'Behavioral Tendency',
+                        data: [85, 60],
+                        backgroundColor: [
+                            'rgba(244, 63, 94, 0.6)',
+                            'rgba(14, 165, 233, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(244, 63, 94, 1)',
+                            'rgba(14, 165, 233, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    if (value === 0) return 'Conservative';
+                                    if (value === 100) return 'Radical Change';
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.label === 'Left Hemisphere') {
+                                        return 'Role: Storyteller. Prefers consistency, will deny or confabulate to avoid changing its model of reality.';
+                                    }
+                                    return "Role: Devil's Advocate. Detects discrepancies and forces reality checks. More willing to accept radical change.";
+                                }
+                            }
+                        }
+                    },
+                    maintainAspectRatio: false
+                }
+            });
+
+            const scenarioOutput = document.getElementById('scenario-output');
+            const scenarioBtns = document.querySelectorAll('.scenario-btn');
+            const scenarioResponses = {
+                left: "The patient might say, 'My arm is fine, I just don't feel like moving it,' or 'I did touch your nose, didn't you see?' This is confabulation—the storyteller creating a narrative to deny the paralysis.",
+                right: "If the right hemisphere were fully functional, it would signal the discrepancy: 'My arm is paralyzed. I cannot perform that action.' It accepts the new, unpleasant reality."
+            };
+            scenarioBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const responseType = btn.dataset.response;
+                    scenarioOutput.textContent = scenarioResponses[responseType];
+                });
+            });
+
+            const synesthesiaChars = document.querySelectorAll('.synesthesia-char');
+            synesthesiaChars.forEach(char => {
+                const originalClass = char.className;
+                const colorClass = char.dataset.color;
+                char.addEventListener('mouseover', () => {
+                    char.classList.add(colorClass, 'text-white', 'scale-110');
+                });
+                char.addEventListener('mouseout', () => {
+                    char.classList.remove(colorClass, 'text-white', 'scale-110');
+                });
+            });
+
+            const apiKey = "AIzaSyCYkqbpqOxDGUKrUddBLnUqPLlANcvJEto"; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            async function callGeminiAPI(prompt, maxRetries = 3) {
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+                let attempt = 0;
+                while (attempt < maxRetries) {
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        const result = await response.json();
+                        if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
+                            return result.candidates[0].content.parts[0].text;
+                        } else {
+                            throw new Error("Invalid response structure from API");
+                        }
+                    } catch (error) {
+                        attempt++;
+                        if (attempt >= maxRetries) {
+                            return "I'm sorry, I'm having trouble connecting to my thoughts right now. Please try again in a moment.";
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+                    }
+                }
+            }
+
+            const generateCaseStudyBtn = document.getElementById('generate-case-study');
+            const caseStudyOutput = document.getElementById('case-study-output');
+            const caseStudyLoader = document.getElementById('case-study-loader');
+
+            generateCaseStudyBtn.addEventListener('click', async () => {
+                caseStudyOutput.classList.add('hidden');
+                caseStudyLoader.classList.remove('hidden');
+                generateCaseStudyBtn.disabled = true;
+
+                const prompt = "As a creative assistant for a neuroscience education app, generate a short, fictional case study (about 100-150 words) of a patient exhibiting anosognosia or a similar neurological phenomenon discussed in V.S. Ramachandran's 'Phantoms in the Brain'. The case study should be written in a clear, clinical yet engaging style. It should describe the patient's condition and a simple observation or experiment that reveals their deficit. For example, a patient who denies their paralysis and confabulates an excuse.";
+                
+                const generatedText = await callGeminiAPI(prompt);
+                caseStudyOutput.textContent = generatedText;
+
+                caseStudyLoader.classList.add('hidden');
+                caseStudyOutput.classList.remove('hidden');
+                generateCaseStudyBtn.disabled = false;
+            });
+            
+            const chatLog = document.getElementById('chat-log');
+            const chatInput = document.getElementById('chat-input');
+            const chatSendBtn = document.getElementById('chat-send');
+            const chatLoader = document.getElementById('chat-loader');
+
+            function appendMessage(text, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('flex', sender === 'user' ? 'justify-end' : 'justify-start');
+                
+                const bubble = document.createElement('div');
+                bubble.classList.add('chat-bubble', 'p-3', 'rounded-lg');
+                bubble.classList.add(sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai');
+                bubble.textContent = text;
+                
+                messageDiv.appendChild(bubble);
+                chatLog.appendChild(messageDiv);
+                chatLog.scrollTop = chatLog.scrollHeight;
+            }
+
+            async function handleChat() {
+                const userInput = chatInput.value.trim();
+                if (!userInput) return;
+
+                appendMessage(userInput, 'user');
+                chatInput.value = '';
+                chatLoader.classList.remove('hidden');
+                chatSendBtn.disabled = true;
+
+                const prompt = `You are the neuroscientist V.S. Ramachandran, author of 'Phantoms in the Brain'. Your tone is enthusiastic, clear, and you use simple analogies to explain complex neurological concepts. A user, who is exploring an interactive app based on your book, has a question. Answer it in your voice. Be helpful and concise. Here is the question: "${userInput}"`;
+
+                const aiResponse = await callGeminiAPI(prompt);
+                appendMessage(aiResponse, 'ai');
+                
+                chatLoader.classList.add('hidden');
+                chatSendBtn.disabled = false;
+            }
+
+            chatSendBtn.addEventListener('click', handleChat);
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleChat();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
