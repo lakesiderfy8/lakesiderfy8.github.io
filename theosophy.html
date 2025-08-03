@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>An Interactive Guide to Theosophy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: A thematic, single-page scrolling application. The structure is designed as a learning journey: 1. A hero section to introduce the topic. 2. An interactive card-based section for 'Core Concepts' with an added Gemini-powered simple explanation feature. 3. A custom, interactive HTML/CSS diagram for the 'Sevenfold Nature of Humanity'. 4. A new Gemini-powered 'Dialogue with a Theosophist' section for interactive Q&A. 5. A clear, concise section on Helena Blavatsky. 6. A final section highlighting the 'Three Objects' of the society. This structure enhances user engagement and comprehension by breaking down complex ideas into manageable, interactive chunks and adding AI-driven exploration. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Core Concepts list -> Goal: Organize, Inform -> Viz/Method: Interactive Cards (HTML/CSS/JS) -> Interaction: Click to reveal details, plus a new button to call Gemini API for a simpler explanation. -> Justification: Provides layered information, catering to both initial understanding and deeper, simplified clarification.
+        - Report Info: Sevenfold Nature of Humanity -> Goal: Inform, Engage -> Viz/Method: Interactive concentric diagram (HTML/CSS) -> Interaction: Hover to highlight a layer and show its description -> Justification: Visually represents a layered concept, making it far easier to understand than text alone.
+        - New Feature: Theosophical Q&A -> Goal: Engage, Inform -> Viz/Method: Chat interface -> Interaction: User types a question, clicks a button, and Gemini API generates a response. -> Justification: Creates a dynamic, personal way to learn and explore topics of interest within Theosophy.
+        - Report Info: Three Objects of the Society -> Goal: Inform -> Viz/Method: Three-column card layout with Unicode icons -> Interaction: Subtle hover effects -> Justification: Gives prominence to the society's foundational goals in a visually balanced way.
+        - Library/Method: Vanilla JS for all interactions. Gemini API for LLM features.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8; /* Warm Neutral */
+        }
+        h1, h2, h3 {
+            font-family: 'Playfair Display', serif;
+        }
+        .concept-card.active {
+            border-color: #D5A021; /* Muted Gold Accent */
+            background-color: #FFF;
+        }
+        .seven-fold-diagram .layer {
+            transition: all 0.3s ease-in-out;
+            cursor: pointer;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #D5A021;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-stone-800">
+
+    <main class="w-full">
+        <!-- Hero Section -->
+        <section class="w-full py-20 md:py-32 bg-stone-100 text-center">
+            <div class="max-w-4xl mx-auto px-4">
+                <h1 class="text-4xl md:text-6xl font-bold text-stone-900">Theosophy</h1>
+                <p class="mt-4 text-xl md:text-2xl text-stone-700">An Interactive Journey into Divine Wisdom</p>
+                <p class="mt-6 max-w-2xl mx-auto text-stone-600">
+                    This guide synthesizes science, religion, and philosophy to help you explore the deeper mysteries of existence. It is not a fixed dogma, but an invitation to an open-minded inquiry and a personal search for truth.
+                </p>
+            </div>
+        </section>
+
+        <!-- Core Concepts Section -->
+        <section id="concepts" class="py-16 md:py-24">
+            <div class="max-w-6xl mx-auto px-4">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold">Core Concepts</h2>
+                    <p class="mt-2 text-stone-600">Click on a concept to unveil its meaning.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+                    <!-- Concept Cards -->
+                    <div class="md:col-span-4">
+                        <div class="space-y-4">
+                            <div id="card-absolute" class="concept-card p-6 border-2 border-stone-200 rounded-lg shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:border-amber-400 active">
+                                <h3 class="text-xl font-bold">The Divine Absolute</h3>
+                            </div>
+                            <div id="card-karma" class="concept-card p-6 border-2 border-stone-200 rounded-lg shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:border-amber-400">
+                                <h3 class="text-xl font-bold">Karma</h3>
+                            </div>
+                            <div id="card-reincarnation" class="concept-card p-6 border-2 border-stone-200 rounded-lg shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:border-amber-400">
+                                <h3 class="text-xl font-bold">Reincarnation</h3>
+                            </div>
+                             <div id="card-masters" class="concept-card p-6 border-2 border-stone-200 rounded-lg shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:border-amber-400">
+                                <h3 class="text-xl font-bold">The Masters of Wisdom</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Concept Display -->
+                    <div class="md:col-span-8">
+                        <div id="concept-display" class="p-8 bg-white rounded-lg shadow-lg min-h-[300px] flex flex-col justify-center relative">
+                            <!-- JS will populate this -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Sevenfold Nature Section -->
+        <section id="sevenfold" class="py-16 md:py-24 bg-stone-100">
+            <div class="max-w-6xl mx-auto px-4">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold">The Sevenfold Nature of Humanity</h2>
+                    <p class="mt-2 text-stone-600">Theosophy presents a complex, layered view of the human being. Hover over the layers of the diagram to explore the seven principles.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div class="seven-fold-diagram relative w-full max-w-sm mx-auto aspect-square flex items-center justify-center">
+                        <!-- Layers will be created by JS -->
+                    </div>
+                    <div id="sevenfold-display" class="p-8 bg-white rounded-lg shadow-lg min-h-[300px]">
+                        <h3 id="sevenfold-title" class="text-2xl font-bold mb-4 text-center">The Seven Principles</h3>
+                        <p id="sevenfold-description" class="text-stone-600 text-center">Each human being is more than just a physical body. We are a composite of seven "bodies" or "principles", from the densest matter to the purest spirit. This concept emphasizes our multi-dimensional nature.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dialogue Section -->
+        <section id="dialogue" class="py-16 md:py-24">
+            <div class="max-w-3xl mx-auto px-4">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold">✨ Dialogue with a Theosophist</h2>
+                    <p class="mt-2 text-stone-600">Have a question about Theosophy? Ask our AI assistant, trained in the principles of Divine Wisdom.</p>
+                </div>
+                <div class="bg-white p-8 rounded-lg shadow-lg">
+                    <div class="space-y-4">
+                        <textarea id="dialogue-input" class="w-full p-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:outline-none" rows="3" placeholder="Ask about Karma, Reincarnation, Helena Blavatsky..."></textarea>
+                        <button id="dialogue-submit" class="w-full bg-amber-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-amber-600 transition-colors duration-300 flex items-center justify-center">
+                            Ask a Question
+                        </button>
+                        <div id="dialogue-output" class="mt-6 p-4 border-t border-stone-200 min-h-[100px]">
+                            <p class="text-stone-500">Your answer will appear here.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Helena Blavatsky Section -->
+        <section id="blavatsky" class="py-16 md:py-24 bg-stone-100">
+            <div class="max-w-5xl mx-auto px-4">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold">A Word on Helena Blavatsky</h2>
+                    <p class="mt-2 text-stone-600">The principal founder and main architect of modern Theosophy.</p>
+                </div>
+                <div class="bg-white p-8 rounded-lg shadow-lg">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                        <div class="flex justify-center">
+                            <div class="w-32 h-32 md:w-48 md:h-48 rounded-full bg-stone-200 flex items-center justify-center">
+                                <span class="text-5xl md:text-7xl text-stone-500" title="Helena Petrovna Blavatsky">HPB</span>
+                            </div>
+                        </div>
+                        <div class="md:col-span-2">
+                             <p class="text-stone-700 mb-4">Helena Petrovna Blavatsky (1831-1891) was a controversial and enigmatic Russian noblewoman who co-founded the Theosophical Society in 1875. A prolific writer and extensive traveler, she claimed to have studied with spiritual masters around the world, most notably in Tibet.</p>
+                            <p class="text-stone-700">She introduced the core concepts of Theosophy to the Western world, claiming to be an intermediary for the Masters of Wisdom. Her teachings have profoundly influenced a wide range of subsequent spiritual and esoteric movements.</p>
+                            <div class="mt-6">
+                                <h4 class="font-bold text-lg mb-2">Foundational Texts:</h4>
+                                <ul class="list-disc list-inside text-stone-600 space-y-1">
+                                    <li><span class="font-semibold">Isis Unveiled (1877):</span> A vast exploration of esoteric themes and critique of both religious dogma and scientific materialism.</li>
+                                    <li><span class="font-semibold">The Secret Doctrine (1888):</span> Her magnum opus, presenting an intricate system of cosmology and human evolution.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Three Objects Section -->
+        <section id="objects" class="py-16 md:py-24 bg-stone-100">
+            <div class="max-w-6xl mx-auto px-4">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold">The Three Objects</h2>
+                    <p class="mt-2 text-stone-600">The foundational aims of the Theosophical Society.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="bg-white p-8 rounded-lg shadow-lg text-center transform hover:scale-105 transition-transform duration-300">
+                        <div class="text-4xl mb-4 text-amber-600">🤝</div>
+                        <h3 class="text-xl font-bold mb-2">Universal Brotherhood</h3>
+                        <p class="text-stone-600">To form a nucleus of the Universal Brotherhood of Humanity, without distinction of race, creed, sex, caste, or color.</p>
+                    </div>
+                    <div class="bg-white p-8 rounded-lg shadow-lg text-center transform hover:scale-105 transition-transform duration-300">
+                        <div class="text-4xl mb-4 text-amber-600">📚</div>
+                        <h3 class="text-xl font-bold mb-2">Comparative Study</h3>
+                        <p class="text-stone-600">To encourage the study of Comparative Religion, Philosophy, and Science.</p>
+                    </div>
+                    <div class="bg-white p-8 rounded-lg shadow-lg text-center transform hover:scale-105 transition-transform duration-300">
+                        <div class="text-4xl mb-4 text-amber-600">🔍</div>
+                        <h3 class="text-xl font-bold mb-2">Investigate Latent Powers</h3>
+                        <p class="text-stone-600">To investigate unexplained laws of Nature and the powers latent in humanity.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center py-8 bg-stone-800 text-stone-300">
+            <p>Explore. Inquire. Discover.</p>
+        </footer>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const concepts = {
+                absolute: {
+                    title: 'The Divine Absolute',
+                    description: 'Theosophy posits the existence of a single, impersonal, and all-encompassing divine reality. This is not a personal God who intervenes in human affairs, but rather an eternal, boundless, and unchangeable principle that is the source of all life and consciousness. Everything in the universe is seen as an emanation or reflection of this Absolute.'
+                },
+                karma: {
+                    title: 'Karma: The Law of Balance',
+                    description: 'This is the universal law of cause and effect. In Theosophy, karma is not about punishment or reward, but rather a natural and impersonal law of equilibrium. Every thought, feeling, and action sets in motion a corresponding effect that will eventually return to the originator. This process is seen as the primary way for the soul to learn and evolve.'
+                },
+                reincarnation: {
+                    title: 'Reincarnation: The Soul\'s Journey',
+                    description: 'Theosophy teaches that the human soul is immortal and undergoes a long series of lifetimes in physical bodies. This is not a random process, but is guided by karma. Through each life, the soul gains experience, learns lessons, and works to overcome its limitations, gradually moving towards a state of spiritual perfection and liberation.'
+                },
+                masters: {
+                    title: 'The Masters of Wisdom',
+                    description: 'A central tenet of early Theosophy is the existence of a secret brotherhood of highly evolved spiritual teachers, known as the "Masters" or "Mahatmas." These individuals are believed to have perfected themselves through many lifetimes and now guide the spiritual evolution of humanity. They are said to have been the source of the teachings Helena Blavatsky brought to the world.'
+                }
+            };
+
+            const conceptDisplay = document.getElementById('concept-display');
+            const conceptCards = document.querySelectorAll('.concept-card');
+            
+            async function callGemini(prompt, outputElement, buttonElement) {
+                const originalButtonText = buttonElement.innerHTML;
+                buttonElement.innerHTML = '<div class="loader"></div>';
+                buttonElement.disabled = true;
+
+                let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiKey = "AIzaSyCYkqbpqOxDGUKrUddBLnUqPLlANcvJEto";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        outputElement.innerHTML = `<p class="text-stone-700">${text.replace(/\n/g, '<br>')}</p>`;
+                    } else {
+                        outputElement.innerHTML = '<p class="text-red-500">Sorry, I couldn\'t get a response. Please try again.</p>';
+                    }
+                } catch (error) {
+                    console.error("Gemini API call failed:", error);
+                    outputElement.innerHTML = '<p class="text-red-500">An error occurred while fetching the explanation. Please check the console for details.</p>';
+                } finally {
+                    buttonElement.innerHTML = originalButtonText;
+                    buttonElement.disabled = false;
+                }
+            }
+
+            function updateConceptDisplay(conceptKey) {
+                const concept = concepts[conceptKey];
+                conceptDisplay.innerHTML = `
+                    <div id="concept-main-content">
+                        <h3 class="text-2xl font-bold mb-4">${concept.title}</h3>
+                        <p class="text-stone-700 text-lg">${concept.description}</p>
+                    </div>
+                    <div id="concept-ai-output" class="mt-4 p-4 bg-stone-50 rounded-lg" style="display: none;"></div>
+                    <button id="explain-simply-btn" class="mt-6 bg-amber-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-amber-600 transition-colors duration-300 self-start flex items-center justify-center">
+                        ✨ Explain It Simply
+                    </button>
+                `;
+                
+                const explainBtn = document.getElementById('explain-simply-btn');
+                const aiOutput = document.getElementById('concept-ai-output');
+                
+                explainBtn.addEventListener('click', () => {
+                    const prompt = `Explain the theosophical concept of "${concept.title}" in very simple terms, as if you were explaining it to a complete beginner. Focus on the core idea and use an analogy if helpful.`;
+                    aiOutput.style.display = 'block';
+                    callGemini(prompt, aiOutput, explainBtn);
+                });
+            }
+
+            conceptCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    conceptCards.forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    const conceptKey = this.id.split('-')[1];
+                    updateConceptDisplay(conceptKey);
+                });
+            });
+
+            updateConceptDisplay('absolute');
+
+            const sevenFoldData = [
+                { name: 'Atma (Spirit)', description: 'The universal spirit, the divine monad. The highest principle, a spark of the Divine Absolute.', color: 'rgba(255, 255, 255, 0.8)' },
+                { name: 'Buddhi (Spiritual Soul)', description: 'The vehicle of Atma. The seat of intuition, wisdom, and spiritual consciousness.', color: 'rgba(239, 224, 255, 0.8)' },
+                { name: 'Manas (Mind)', description: 'The principle of mind and self-consciousness. It is dual, linking the higher spiritual nature with the lower mortal self.', color: 'rgba(204, 214, 255, 0.8)' },
+                { name: 'Kama Rupa (Desire Body)', description: 'The seat of animal desires and passions. The center of our emotional life.', color: 'rgba(255, 204, 204, 0.8)' },
+                { name: 'Prana (Life-Force)', description: 'The vital principle or life energy that permeates the entire body.', color: 'rgba(204, 255, 204, 0.8)' },
+                { name: 'Linga Sharira (Astral Body)', description: 'The subtle model or blueprint of the physical body. It is the vehicle of Prana.', color: 'rgba(255, 255, 204, 0.8)' },
+                { name: 'Sthula Sharira (Physical Body)', description: 'The dense, physical vehicle. The lowest principle, the instrument for action in the material world.', color: 'rgba(224, 224, 224, 0.8)' },
+            ].reverse();
+
+            const diagramContainer = document.querySelector('.seven-fold-diagram');
+            const sevenfoldTitle = document.getElementById('sevenfold-title');
+            const sevenfoldDescription = document.getElementById('sevenfold-description');
+            
+            const totalLayers = sevenFoldData.length;
+            sevenFoldData.forEach((layerData, index) => {
+                const layer = document.createElement('div');
+                const size = (100 / totalLayers) * (totalLayers - index);
+                layer.className = 'layer absolute rounded-full flex items-center justify-center transition-all duration-300';
+                layer.style.width = `${size}%`;
+                layer.style.height = `${size}%`;
+                layer.style.backgroundColor = layerData.color;
+                layer.style.border = '2px solid rgba(0,0,0,0.1)';
+                layer.dataset.name = layerData.name;
+                layer.dataset.description = layerData.description;
+                diagramContainer.appendChild(layer);
+
+                layer.addEventListener('mouseover', function() {
+                    sevenfoldTitle.textContent = this.dataset.name;
+                    sevenfoldDescription.textContent = this.dataset.description;
+                    this.style.transform = 'scale(1.05)';
+                    this.style.borderColor = '#D5A021';
+                });
+                layer.addEventListener('mouseout', function() {
+                    this.style.transform = 'scale(1)';
+                    this.style.borderColor = 'rgba(0,0,0,0.1)';
+                });
+            });
+
+            const dialogueInput = document.getElementById('dialogue-input');
+            const dialogueSubmit = document.getElementById('dialogue-submit');
+            const dialogueOutput = document.getElementById('dialogue-output');
+
+            dialogueSubmit.addEventListener('click', () => {
+                const question = dialogueInput.value;
+                if (question.trim() === '') {
+                    dialogueOutput.innerHTML = '<p class="text-red-500">Please enter a question.</p>';
+                    return;
+                }
+                const prompt = `You are an AI assistant embodying the persona of a knowledgeable and eloquent Theosophist from the late 19th century, in the style of Helena Blavatsky but speaking clearly for a modern audience. Answer the following question based on Theosophical principles. Question: "${question}"`;
+                callGemini(prompt, dialogueOutput, dialogueSubmit);
+            });
+        });
+    </script>
+</body>
+</html>
