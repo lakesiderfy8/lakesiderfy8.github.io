@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helena Blavatsky: An Interactive Monograph with Gemini AI</title>
+    <!-- Chosen Palette: Scholarly Neutral -->
+    <!-- Application Structure Plan: The application is designed as a non-linear, thematic exploration to unravel the paradox of Helena Blavatsky. A central navigation hub allows users to jump between five core themes: 'The Life & Legend' (biography vs. myth via an interactive timeline with AI-powered summaries), 'The Architect's Vision' (simplifying her complex philosophy with diagrams), 'The Crucible of Criticism' (presenting controversies with a balanced, comparative view), 'The Enduring Echo' (visualizing her influence with an interactive web), and 'The Oracle' (an AI-powered Q&A). This structure was chosen over a linear format to empower users to explore the aspects that most interest them, fostering engagement and a deeper understanding. -->
+    <!-- Visualization & Content Choices: 
+        - Life & Travels (Report Part I) -> Goal: Contrast myth/reality -> Viz: Interactive Timeline -> Interaction: Click events for details, plus a "Unfold Doctrine" button that calls Gemini API to summarize her major books -> Justification: Provides on-demand depth for complex topics -> Method: HTML/JS, Gemini API.
+        - Core Doctrines (Report Part II) -> Goal: Simplify cosmology -> Viz: HTML/CSS Diagrams -> Interaction: Hover for tooltips, click to expand -> Justification: Makes abstract concepts visual and digestible -> Method: HTML/JS.
+        - Hodgson Report (Report Part III) -> Goal: Balanced view of controversy -> Viz: Bar Chart & Comparative Cards -> Interaction: Click to reveal claim vs. rebuttal -> Justification: Direct comparison aids critical analysis -> Method: Chart.js for data, HTML/JS for cards.
+        - Influence (Report Part IV) -> Goal: Show breadth of legacy -> Viz: Interactive "Web of Influence" -> Interaction: Click nodes for info cards -> Justification: Visually compelling, shows interconnectedness -> Method: HTML/JS.
+        - Oracle Q&A -> Goal: User-driven exploration -> Viz: Input field and response area -> Interaction: User types a question, Gemini API generates an answer in an oracular style -> Justification: Creates an engaging, personalized learning experience -> Method: HTML/JS, Gemini API.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Source Sans 3', sans-serif;
+            background-color: #F8F5F2;
+            color: #4A5568;
+        }
+        h1, h2, h3, h4 {
+            font-family: 'Lora', serif;
+        }
+        .nav-link {
+            transition: color 0.3s, border-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #B98B73;
+            border-bottom-color: #B98B73;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            top: 1rem;
+            left: -0.6rem;
+            width: 1.2rem;
+            height: 1.2rem;
+            background-color: #B98B73;
+            border-radius: 50%;
+            border: 3px solid #F8F5F2;
+            z-index: 10;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #B98B73;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-30 shadow-sm">
+        <nav class="container mx-auto px-6 py-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <h1 class="text-2xl font-bold text-gray-800">Helena Blavatsky</h1>
+                <div id="nav-links" class="flex flex-wrap justify-center space-x-4 md:space-x-6 mt-4 md:mt-0 text-lg">
+                    <a href="#hero" class="nav-link active pb-1">Home</a>
+                    <a href="#life" class="nav-link pb-1">Life & Legend</a>
+                    <a href="#vision" class="nav-link pb-1">The Vision</a>
+                    <a href="#criticism" class="nav-link pb-1">Criticism</a>
+                    <a href="#legacy" class="nav-link pb-1">Legacy</a>
+                    <a href="#oracle" class="nav-link pb-1">The Oracle</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main id="main-content" class="container mx-auto p-4 md:p-8">
+        
+        <!-- Hero Section -->
+        <section id="hero" class="content-section active text-center fade-in">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-gray-800 mb-4">A Ball of Contradictions</h2>
+                <p class="text-xl text-gray-600 mb-8 leading-relaxed">
+                    Visionary mystic or ingenious charlatan? Helena Petrovna Blavatsky (1831-1891) is one of modern history's most polarizing figures. She co-founded a global spiritual movement, authored monumental works of esoteric philosophy, and claimed contact with hidden masters of wisdom. Yet she was dogged by accusations of fraud, plagiarism, and racism. This interactive monograph invites you to explore the paradoxes of her life, work, and legacy, and to draw your own conclusions.
+                </p>
+                <div class="flex justify-center">
+                    <a href="#life" class="nav-link-button bg-[#B98B73] text-white font-bold py-3 px-8 rounded-full hover:bg-opacity-90 transition-transform transform hover:scale-105">
+                        Begin the Journey
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Life & Legend Section -->
+        <section id="life" class="content-section fade-in">
+            <div class="max-w-5xl mx-auto">
+                <h2 class="text-4xl font-bold text-center mb-2 text-gray-800">The Life & Legend</h2>
+                <p class="text-lg text-center text-gray-600 mb-12">Blavatsky's life story is a tapestry of documented history, nomadic wandering, and contested spiritual encounters. The period of her travels, known as the "lost years," is the cornerstone of her authority and the primary focus of critical debate. This timeline charts her journey, presenting both the Theosophical narrative and the scholarly perspectives, allowing you to see where the story is clear and where it becomes a legend.</p>
+                <div id="timeline-container" class="relative border-l-2 border-[#E5E0DB] pl-8 space-y-12">
+                    <!-- Timeline items will be injected here by JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- The Vision Section -->
+        <section id="vision" class="content-section fade-in">
+            <div class="max-w-5xl mx-auto">
+                <h2 class="text-4xl font-bold text-center mb-2 text-gray-800">The Architect's Vision</h2>
+                 <p class="text-lg text-center text-gray-600 mb-12">Blavatsky's goal was nothing less than to synthesize science, religion, and philosophy into a "Wisdom-Religion" for the modern age. Her monumental works, *Isis Unveiled* and *The Secret Doctrine*, laid out a vast cosmology. Here, we distill the core tenets of her vision, from the fundamental principles of existence to her controversial theory of human spiritual evolution through "Root Races."</p>
+                
+                <h3 class="text-3xl font-bold text-center my-8 text-gray-800">The Three Fundamental Propositions</h3>
+                <div id="propositions-container" class="grid md:grid-cols-3 gap-6">
+                    <!-- Propositions will be injected here -->
+                </div>
+
+                <h3 class="text-3xl font-bold text-center mt-16 mb-8 text-gray-800">The Doctrine of Root Races</h3>
+                <div id="root-races-container" class="relative mt-8">
+                     <!-- Root Races diagram will be injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Criticism Section -->
+        <section id="criticism" class="content-section fade-in">
+            <div class="max-w-5xl mx-auto">
+                <h2 class="text-4xl font-bold text-center mb-2 text-gray-800">The Crucible of Criticism</h2>
+                <p class="text-lg text-center text-gray-600 mb-12">Blavatsky's public life was a storm of controversy. She was accused of faking paranormal phenomena, plagiarizing vast sections of her books, and promoting racist ideas. This section examines the most significant charges leveled against her, presenting the evidence from her detractors alongside the defenses offered by her and her supporters.</p>
+                
+                <h3 class="text-3xl font-bold text-center my-8 text-gray-800">The Hodgson Report (1885)</h3>
+                <p class="text-md text-center text-gray-600 mb-8">The most damaging attack came from the Society for Psychical Research (SPR), whose report branded her "one of the most accomplished impostors in history." The chart below visualizes the key points of contention, followed by cards detailing the claims and the later rebuttals.</p>
+                <div class="chart-container bg-white p-4 rounded-lg shadow-md">
+                    <canvas id="hodgsonReportChart"></canvas>
+                </div>
+                <div id="criticism-cards-container" class="grid md:grid-cols-2 gap-6 mt-8">
+                     <!-- Criticism cards will be injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Legacy Section -->
+        <section id="legacy" class="content-section fade-in">
+            <div class="max-w-5xl mx-auto">
+                <h2 class="text-4xl font-bold text-center mb-2 text-gray-800">The Enduring Echo</h2>
+                <p class="text-lg text-center text-gray-600 mb-12">Despite the controversies, Blavatsky's influence on 20th-century spirituality, art, and literature is undeniable. She popularized Eastern concepts like karma and reincarnation in the West, laying the groundwork for the New Age movement and inspiring major cultural figures. Explore this "web of influence" to see how her ideas spread and were transformed by others.</p>
+                <div id="legacy-web-container" class="relative w-full h-[600px] md:h-[500px]">
+                    <!-- Legacy web will be injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Oracle Section -->
+        <section id="oracle" class="content-section fade-in">
+            <div class="max-w-3xl mx-auto text-center">
+                <h2 class="text-4xl font-bold text-gray-800 mb-4">✨ The Oracle Awaits</h2>
+                <p class="text-lg text-gray-600 mb-8">Pose a question to the ether. Inquire about the nature of reality, the cycles of existence, or the mysteries of Theosophy. The Oracle, powered by Gemini, will offer a reflection in the spirit of the Ancient Wisdom.</p>
+                <div class="w-full">
+                    <textarea id="oracle-question" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#B98B73] focus:border-[#B98B73] transition" rows="3" placeholder="Ask about Karma, the Masters, or the purpose of life..."></textarea>
+                    <button id="ask-oracle-btn" class="mt-4 bg-[#B98B73] text-white font-bold py-3 px-8 rounded-full hover:bg-opacity-90 transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Consult the Oracle
+                    </button>
+                </div>
+                <div id="oracle-response-container" class="mt-8 text-left bg-white p-6 rounded-lg shadow-md min-h-[100px] hidden">
+                    <div id="oracle-loader" class="flex justify-center items-center hidden">
+                        <div class="loader"></div>
+                    </div>
+                    <p id="oracle-response" class="text-gray-700 leading-relaxed whitespace-pre-wrap"></p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center py-8 mt-12 border-t border-[#E5E0DB]">
+        <p class="text-gray-500">An interactive exploration based on the monograph "Helena Blavatsky: An Analytical Monograph on the Life, Work, and Controversies of a Modern Occultist".</p>
+    </footer>
+
+    <!-- Modal for timeline details -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div id="modal-content" class="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 relative max-h-[90vh] overflow-y-auto">
+            <button id="modal-close" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+            <!-- Modal content will be injected here -->
+        </div>
+    </div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const data = {
+        timeline: [
+            { year: 1831, title: "Birth in Yekaterinoslav", text: "Helena Petrovna von Hahn is born into a Russian-German aristocratic family during a cholera epidemic. Theosophical accounts describe her as a child with remarkable psychic abilities." },
+            { year: 1849, title: "Rebellious Marriage", text: "At 17, she marries Nikifor Blavatsky, a man in his 40s. She claims the marriage was never consummated and escapes after three months, beginning her 'lost years' of travel." },
+            { year: 1851, title: "Meeting the Master", text: "Theosophical narrative: In London, she meets Master Morya, a Rajput adept she recognized from childhood visions. He reveals her life's mission: to found the Theosophical Society." },
+            { year: "1850s-60s", title: "The 'Lost Years' of Travel", text: "She claims to have traveled the world, visiting Tibet, the Americas, and the Near East, studying with mystics. Critical View: There is no independent evidence for most of these journeys, which are considered largely fabricated or exaggerated." },
+            { year: 1871, title: "Société Spirite in Cairo", text: "Her first attempt to form an esoteric group. It quickly collapses amid accusations of fraud against the mediums she employed, a precursor to later controversies." },
+            { year: 1873, title: "Arrival in New York", text: "Following her Master's instructions, she arrives in the US and immerses herself in the Spiritualist movement, defending the phenomena but rejecting the theory of spirits of the dead." },
+            { year: 1874, title: "Meeting Olcott and Judge", text: "At the Eddy homestead in Vermont, she meets Col. Henry Steel Olcott and later William Quan Judge, forming the triumvirate that would launch Theosophy." },
+            { year: 1875, title: "Theosophical Society Founded", text: "The Society is officially formed in New York City with the objects of forming a universal brotherhood, studying comparative religion, and investigating unexplained laws of nature." },
+            { year: 1877, title: "Publication of 'Isis Unveiled'", text: "Her first major work, a massive two-volume polemic against materialist science and dogmatic theology. It becomes a sensation, establishing her as a major figure in Western esotericism.", book: "Isis Unveiled" },
+            { year: 1879, title: "Move to India", text: "Blavatsky and Olcott relocate to India, shifting Theosophy's center of gravity to the East and championing Hindu and Buddhist wisdom." },
+            { year: 1882, title: "Adyar Headquarters Established", text: "They purchase an estate in Adyar, Madras (now Chennai), which becomes the international headquarters of the Theosophical Society." },
+            { year: 1885, title: "The Hodgson Report", text: "The Society for Psychical Research publishes a report based on an investigation by Richard Hodgson, branding Blavatsky a sophisticated fraud. This report will tarnish her reputation for a century." },
+            { year: 1888, title: "Publication of 'The Secret Doctrine'", text: "Her magnum opus, a two-volume work outlining a complete cosmology and anthropology based on the 'Stanzas of Dzyan'. It details the controversial theory of Root Races.", book: "The Secret Doctrine" },
+            { year: 1891, title: "Death in London", text: "Helena Blavatsky dies at the age of 59, leaving behind a controversial but profoundly influential legacy." },
+        ],
+        propositions: [
+            { title: "The Absolute Principle", text: "An Omnipresent, Eternal, Boundless, and Immutable Principle beyond human conception. It is the 'causeless cause' from which all manifested existence periodically unfolds." },
+            { title: "The Law of Periodicity", text: "The universe is not a one-time creation but undergoes immense, eternal cycles of activity (Manvantaras) and dissolution (Pralayas), like the ebb and flow of tides." },
+            { title: "The Pilgrimage of the Soul", text: "Every soul is a spark of the divine Over-Soul, obligated to undertake a pilgrimage through cycles of incarnation, governed by Karma, to unfold its latent potential and reunite with its source." },
+        ],
+        rootRaces: [
+            { name: "First Root Race", description: "Ethereal & Non-Physical" },
+            { name: "Second Root Race (Hyperborean)", description: "Lived on a lost northern continent" },
+            { name: "Third Root Race (Lemurian)", description: "Developed physical bodies and separated into sexes" },
+            { name: "Fourth Root Race (Atlantean)", description: "Highly advanced but spiritually degenerate" },
+            { name: "Fifth Root Race (Aryan)", description: "Our current humanity" },
+            { name: "Sixth & Seventh Root Races", description: "Future humanities to evolve" },
+        ],
+        criticisms: [
+            { 
+                title: "Fraud & The Hodgson Report", 
+                claim: "Hodgson's 1885 report for the Society for Psychical Research concluded Blavatsky was a sophisticated fraud who faked paranormal phenomena (like the 'Mahatma Letters') using trickery, based on testimony from dismissed employees (the Coulombs) and his discovery of supposed trap doors.",
+                rebuttal: "In 1986, Dr. Vernon Harrison, a handwriting expert and SPR member, re-examined the case and found Hodgson's report 'riddled with falsity' and 'forfeiting all claim to scientific impartiality.' Harrison concluded the incriminating letters were likely forgeries by the Coulombs, not Blavatsky."
+            },
+            { 
+                title: "Plagiarism", 
+                claim: "Critics like William Emmette Coleman documented that Blavatsky lifted vast portions of her works, especially *Isis Unveiled*, verbatim from dozens of other, often obscure, occult and scientific books without attribution.",
+                rebuttal: "Blavatsky and her defenders did not deny the borrowings but reframed them. They argued she was not an academic but a 'compiler' of the 'Wisdom of the Ages,' and her mission was to synthesize and present universal truths, making the modern concept of intellectual property secondary."
+            },
+            { 
+                title: "Racism", 
+                claim: "Her Root Race theory in *The Secret Doctrine* presents a spiritual hierarchy of races, labeling the 'Aryan' race as the most advanced and describing some indigenous peoples as degenerate 'failures of nature,' remnants of less-evolved races.",
+                rebuttal: "This is balanced against the first object of her Society: 'Universal Brotherhood without distinction of race.' She also argued that all races rise and fall in cycles. Supporters argue she was a product of her time, using the flawed racial science of the 19th century to frame a spiritual idea, while simultaneously promoting a philosophy of unity."
+            }
+        ],
+        legacy: [
+            { name: "W.B. Yeats", x: 15, y: 15, text: "The Irish poet was an early member of the Theosophical Society's Esoteric Section. Though he later left for the Golden Dawn, Theosophy was his gateway into systematic occultism, profoundly shaping his poetic vision." },
+            { name: "Wassily Kandinsky", x: 85, y: 15, text: "The pioneer of abstract art cited Blavatsky in his treatise *Concerning the Spiritual in Art*. Theosophy's ideas of a hidden spiritual reality behind the 'illusion' of the physical world gave him the philosophical framework to abandon representational art." },
+            { name: "New Age Movement", x: 50, y: 30, text: "Blavatsky is considered the 'foremother of modern spirituality.' Core New Age tenets—karma, reincarnation, Ascended Masters, and planes of existence—were popularized and systematized by her." },
+            { name: "Carl Jung", x: 20, y: 80, text: "While not a direct lineage, Blavatsky helped revive the Gnostic and esoteric traditions that heavily influenced Jung. Parallels exist between Theosophy's cosmology and Jung's concepts of the collective unconscious, archetypes, and individuation." },
+            { name: "Indian Nationalism", x: 80, y: 80, text: "By championing Hinduism and Buddhism, Theosophy contributed to a cultural renaissance in colonial India. A young M.K. Gandhi was prompted by Theosophists to read the *Bhagavad Gita*, an encounter he acknowledged as pivotal." },
+        ]
+    };
+
+    const mainContent = document.getElementById('main-content');
+    const navLinks = document.querySelectorAll('#nav-links a, .nav-link-button');
+    const sections = document.querySelectorAll('.content-section');
+    const modal = document.getElementById('modal');
+    const modalContent = document.getElementById('modal-content');
+    const modalClose = document.getElementById('modal-close');
+
+    // Gemini API call function
+    async function callGemini(prompt, button) {
+        if (button) button.disabled = true;
+        
+        let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+        const payload = { contents: chatHistory };
+        const apiKey = "AIzaSyCYkqbpqOxDGUKrUddBLnUqPLlANcvJEto";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                return result.candidates[0].content.parts[0].text;
+            } else {
+                return "The Oracle is silent. The connection to the ether seems to be disturbed.";
+            }
+        } catch (error) {
+            console.error("Error calling Gemini API:", error);
+            return "A cosmic disturbance has interfered with the connection. Please try again later.";
+        } finally {
+            if (button) button.disabled = false;
+        }
+    }
+
+    function navigateTo(hash) {
+        sections.forEach(s => s.classList.remove('active'));
+        navLinks.forEach(l => l.classList.remove('active'));
+
+        const targetSection = document.querySelector(hash);
+        const targetLink = document.querySelector(`a[href="${hash}"]`);
+
+        if (targetSection) {
+            targetSection.classList.add('active');
+            if (window.innerWidth < 768) { // Only scroll on mobile
+                 mainContent.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        if (targetLink) {
+            targetLink.classList.add('active');
+        }
+    }
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const hash = link.getAttribute('href');
+            navigateTo(hash);
+            window.history.pushState(null, null, hash);
+        });
+    });
+
+    window.addEventListener('popstate', () => {
+        const hash = window.location.hash || '#hero';
+        navigateTo(hash);
+    });
+
+    function populateTimeline() {
+        const container = document.getElementById('timeline-container');
+        container.innerHTML = data.timeline.map(item => `
+            <div class="timeline-item relative pb-8">
+                <div class="ml-4">
+                    <h4 class="text-xl font-bold text-[#B98B73]">${item.year} - ${item.title}</h4>
+                    <p class="mt-2 text-gray-600">${item.text}</p>
+                    ${item.book ? `<button class="unfold-doctrine-btn mt-2 bg-gray-200 text-gray-700 font-semibold py-1 px-3 rounded-full text-sm hover:bg-gray-300 transition" data-book="${item.book}">✨ Unfold the Doctrine</button>` : ''}
+                    <div id="doctrine-summary-${item.year}" class="mt-4 p-4 bg-gray-100 rounded-lg text-sm hidden"></div>
+                </div>
+            </div>
+        `).join('');
+        
+        document.querySelectorAll('.unfold-doctrine-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const book = e.target.getAttribute('data-book');
+                const year = e.target.parentElement.parentElement.querySelector('h4').textContent.split(' ')[0];
+                const summaryContainer = document.getElementById(`doctrine-summary-${year}`);
+                
+                if (summaryContainer.classList.contains('hidden')) {
+                    summaryContainer.classList.remove('hidden');
+                    summaryContainer.innerHTML = '<div class="flex justify-center items-center"><div class="loader"></div></div>';
+                    e.target.disabled = true;
+
+                    const prompt = `In the style of a concise encyclopedia entry, summarize the key themes and arguments of Helena Blavatsky's book, "${book}".`;
+                    const summary = await callGemini(prompt, e.target);
+                    summaryContainer.innerHTML = summary;
+                } else {
+                    summaryContainer.classList.add('hidden');
+                    summaryContainer.innerHTML = '';
+                }
+            });
+        });
+    }
+
+    function populatePropositions() {
+        const container = document.getElementById('propositions-container');
+        container.innerHTML = data.propositions.map(prop => `
+            <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#B98B73]">
+                <h4 class="text-xl font-bold text-gray-800 mb-2">${prop.title}</h4>
+                <p class="text-gray-600">${prop.text}</p>
+            </div>
+        `).join('');
+    }
+
+    function populateRootRaces() {
+        const container = document.getElementById('root-races-container');
+        let html = '<div class="flex flex-col items-center space-y-2">';
+        data.rootRaces.forEach((race, index) => {
+            html += `
+                <div class="w-full max-w-md text-center">
+                    <div class="bg-white p-4 rounded-lg shadow-md">
+                        <h5 class="font-bold text-lg text-[#B98B73]">${race.name}</h5>
+                        <p class="text-sm text-gray-600">${race.description}</p>
+                    </div>
+                </div>
+            `;
+            if (index < data.rootRaces.length - 1) {
+                html += `<div class="text-2xl text-gray-400 font-light">&darr;</div>`;
+            }
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    function populateCriticismCards() {
+        const container = document.getElementById('criticism-cards-container');
+        container.innerHTML = data.criticisms.map(crit => `
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h4 class="text-2xl font-bold text-gray-800 mb-4">${crit.title}</h4>
+                <div class="space-y-4">
+                    <div>
+                        <h5 class="font-semibold text-[#B98B73]">The Claim:</h5>
+                        <p class="text-gray-600">${crit.claim}</p>
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-[#B98B73]">The Rebuttal / Defense:</h5>
+                        <p class="text-gray-600">${crit.rebuttal}</p>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function populateLegacyWeb() {
+        const container = document.getElementById('legacy-web-container');
+        let html = `
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                <div class="w-32 h-32 bg-[#B98B73] rounded-full flex items-center justify-center text-center text-white font-bold text-lg p-2 shadow-2xl">Helena Blavatsky</div>
+            </div>
+        `;
+        html += data.legacy.map(item => `
+            <div class="absolute" style="left: ${item.x}%; top: ${item.y}%;">
+                <div class="relative group">
+                     <div class="w-24 h-24 bg-white border-2 border-[#E5E0DB] rounded-full flex items-center justify-center text-center font-semibold text-sm p-2 cursor-pointer shadow-lg transform group-hover:scale-110 transition-transform">${item.name}</div>
+                     <div class="absolute bottom-full mb-2 w-64 bg-gray-800 text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 pointer-events-none left-1/2 -translate-x-1/2">${item.text}</div>
+                </div>
+            </div>
+        `).join('');
+        container.innerHTML = html;
+    }
+    
+    function createHodgsonChart() {
+        const ctx = document.getElementById('hodgsonReportChart').getContext('2d');
+        const chartData = {
+            labels: ['Authenticity of Coulomb Letters', 'Authorship of Mahatma Letters', 'Paranormal Phenomena', 'Investigator Objectivity'],
+            datasets: [
+                {
+                    label: "Hodgson's Conclusion (Negative)",
+                    data: [100, 100, 100, 100],
+                    backgroundColor: 'rgba(217, 119, 6, 0.6)',
+                    borderColor: 'rgba(217, 119, 6, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: "Harrison's Rebuttal (Positive/Neutral)",
+                    data: [10, 10, 50, 0],
+                    backgroundColor: 'rgba(74, 85, 104, 0.6)',
+                    borderColor: 'rgba(74, 85, 104, 1)',
+                    borderWidth: 1
+                }
+            ]
+        };
+        new Chart(ctx, {
+            type: 'bar',
+            data: chartData,
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        display: false,
+                        max: 100
+                    },
+                    y: {
+                        ticks: {
+                            font: {
+                                size: 10
+                            },
+                            callback: function(value, index, values) {
+                                const label = this.getLabelForValue(value);
+                                return label.length > 20 ? label.substring(0, 20) + '...' : label;
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Hodgson Report vs. Harrison Rebuttal (Conceptual)'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.dataset.label.includes("Hodgson")) return 'Conclusion: Fraudulent';
+                                if (context.dataset.label.includes("Harrison")) return 'Conclusion: Flawed Investigation';
+                                return '';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Oracle Logic
+    const askOracleBtn = document.getElementById('ask-oracle-btn');
+    const oracleQuestion = document.getElementById('oracle-question');
+    const oracleResponseContainer = document.getElementById('oracle-response-container');
+    const oracleResponseEl = document.getElementById('oracle-response');
+    const oracleLoader = document.getElementById('oracle-loader');
+
+    askOracleBtn.addEventListener('click', async () => {
+        const question = oracleQuestion.value.trim();
+        if (!question) return;
+
+        oracleResponseContainer.classList.remove('hidden');
+        oracleLoader.classList.remove('hidden');
+        oracleResponseEl.classList.add('hidden');
+        
+        const prompt = `You are an oracle speaking in the spirit of Helena Blavatsky's Theosophy. A seeker has asked: "${question}". Respond with wisdom that is enigmatic, profound, and hints at deeper, hidden truths. Do not break character. Speak of cycles, karma, hidden masters, and the illusion of the material world.`;
+        
+        const response = await callGemini(prompt, askOracleBtn);
+        
+        oracleLoader.classList.add('hidden');
+        oracleResponseEl.classList.remove('hidden');
+        oracleResponseEl.textContent = response;
+    });
+
+    modalClose.addEventListener('click', () => modal.classList.add('hidden'));
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.classList.add('hidden');
+        }
+    });
+
+    // Initial population
+    const initialHash = window.location.hash || '#hero';
+    navigateTo(initialHash);
+    populateTimeline();
+    populatePropositions();
+    populateRootRaces();
+    populateCriticismCards();
+    populateLegacyWeb();
+    createHodgsonChart();
+});
+</script>
+
+</body>
+</html>
