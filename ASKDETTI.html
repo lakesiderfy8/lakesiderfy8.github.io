@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detti: Your UCLAN Mentor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #003366, #005f9e);
+        }
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        #language-selector, #main-content {
+            transition: opacity 0.5s ease-in-out;
+        }
+        #main-content {
+            display: none;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .ai-response {
+            white-space: pre-wrap;
+            background-color: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 0.25rem;
+            color: #1e3a8a;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Language Selector -->
+    <div id="language-selector" class="min-h-screen flex flex-col items-center justify-center gradient-bg text-white p-4">
+        <div class="text-center">
+            <h1 class="text-4xl md:text-6xl font-bold mb-2">Detti</h1>
+            <p class="text-lg md:text-2xl mb-8">Your mentor and guide at UCLAN</p>
+            <div class="space-y-4">
+                <h2 class="text-xl md:text-2xl font-semibold">Please select your language</h2>
+                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 justify-center">
+                    <button onclick="selectLanguage('en')" class="bg-white text-blue-800 font-bold py-3 px-8 rounded-full text-lg hover:bg-gray-200 transition duration-300 shadow-lg">English</button>
+                    <button onclick="selectLanguage('zh')" class="bg-white text-blue-800 font-bold py-3 px-8 rounded-full text-lg hover:bg-gray-200 transition duration-300 shadow-lg">中文 (Mandarin)</button>
+                    <button onclick="selectLanguage('ur')" class="bg-white text-blue-800 font-bold py-3 px-8 rounded-full text-lg hover:bg-gray-200 transition duration-300 shadow-lg" style="font-family: 'Noto Nastaliq Urdu', serif;">اردو (Urdu)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content" class="opacity-0">
+        <!-- Header -->
+        <header class="gradient-bg text-white shadow-md sticky top-0 z-50">
+            <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+                <h1 id="header-title" class="text-2xl font-bold">Detti</h1>
+                <button onclick="showLanguageSelector()" id="change-lang-btn" class="bg-white text-blue-800 font-semibold py-2 px-4 rounded-full hover:bg-gray-200 transition duration-300">Change Language</button>
+            </div>
+        </header>
+
+        <!-- Welcome Section -->
+        <section id="welcome" class="py-12 md:py-16 bg-white">
+            <div class="container mx-auto px-6 text-center">
+                <h2 id="welcome-title" class="text-3xl md:text-4xl font-bold text-gray-900 mb-4"></h2>
+                <p id="welcome-text" class="text-lg text-gray-600 max-w-3xl mx-auto"></p>
+            </div>
+        </section>
+
+        <!-- Main Sections -->
+        <main class="container mx-auto px-6 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+                <!-- Ask Detti Card -->
+                <div class="card bg-white rounded-lg shadow-md overflow-hidden md:col-span-2 lg:col-span-3 p-6">
+                    <h3 id="ask-detti-title" class="text-2xl font-bold mb-4 text-gray-900 flex items-center"></h3>
+                    <p id="ask-detti-text" class="text-gray-700 mb-4"></p>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="text" id="ask-detti-input" class="flex-grow border-2 border-gray-300 rounded-lg p-3 focus:outline-none focus:border-blue-500" placeholder="">
+                        <button id="ask-detti-btn" onclick="askDetti()" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center">
+                            <span id="ask-detti-btn-text"></span>
+                        </button>
+                    </div>
+                    <div id="ask-detti-response-container" class="mt-4"></div>
+                </div>
+
+                <!-- Accommodation Card -->
+                <div class="card bg-white rounded-lg shadow-md overflow-hidden">
+                    <img src="https://placehold.co/600x400/003366/FFFFFF?text=Accommodation" alt="Accommodation" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 id="accommodation-title" class="text-2xl font-bold mb-2 text-gray-900"></h3>
+                        <div id="accommodation-content">
+                            <p id="accommodation-text" class="text-gray-700 mb-4"></p>
+                            <a id="accommodation-link" href="#" class="font-semibold text-blue-600 hover:underline"></a>
+                        </div>
+                        <button id="accommodation-ai-btn" onclick="getAITips('accommodation')" class="mt-4 w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition duration-300"></button>
+                    </div>
+                </div>
+
+                <!-- Public Transport Card -->
+                <div class="card bg-white rounded-lg shadow-md overflow-hidden">
+                    <img src="https://placehold.co/600x400/e879f9/FFFFFF?text=Transport" alt="Public Transport" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 id="transport-title" class="text-2xl font-bold mb-2 text-gray-900"></h3>
+                        <div id="transport-content">
+                            <p id="transport-text" class="text-gray-700 mb-4"></p>
+                            <a id="transport-link" href="#" class="font-semibold text-blue-600 hover:underline"></a>
+                        </div>
+                        <button id="transport-ai-btn" onclick="getAITips('transport')" class="mt-4 w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition duration-300"></button>
+                    </div>
+                </div>
+
+                <!-- Local Life Card -->
+                <div class="card bg-white rounded-lg shadow-md overflow-hidden">
+                    <img src="https://placehold.co/600x400/34d399/FFFFFF?text=Local+Life" alt="Cultural & Medical Advice" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 id="culture-title" class="text-2xl font-bold mb-2 text-gray-900"></h3>
+                        <div id="culture-content">
+                            <p id="culture-text" class="text-gray-700 mb-4"></p>
+                            <a id="culture-link" href="#" class="font-semibold text-blue-600 hover:underline"></a>
+                        </div>
+                        <button id="culture-ai-btn" onclick="getAITips('culture')" class="mt-4 w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition duration-300"></button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-gray-800 text-white mt-12">
+            <div class="container mx-auto px-6 py-4 text-center">
+                <p>&copy; 2024 Detti at UCLAN. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // --- CONTENT DATABASE ---
+        const content = {
+            en: {
+                headerTitle: "Detti",
+                changeLangBtn: "Change Language",
+                welcomeTitle: "Welcome to UCLAN, Preston!",
+                welcomeText: "Detti is your AI-powered guide to help you settle in. Ask a question below or get AI tips on specific topics.",
+                askDettiTitle: "✨ Ask Detti Anything",
+                askDettiText: "Have a specific question? Whether it's about finding the best coffee, understanding British slang, or managing your studies, ask here!",
+                askDettiPlaceholder: "e.g., Where can I find a quiet place to study?",
+                askDettiBtnText: "Ask",
+                getAITipsBtn: "✨ Get AI Tips",
+                accommodationTitle: "Accommodation",
+                accommodationText: "Find a place to live. UCLAN offers a range of university-managed halls of residence. You can also find private accommodation in the city.",
+                accommodationLink: "Explore UCLAN Accommodation",
+                transportTitle: "Public Transport",
+                transportText: "Getting around Preston is easy. The city is well-served by buses, and the train station offers connections to major UK cities.",
+                transportLink: "Learn about Preston Bus",
+                cultureTitle: "Local Life & Advice",
+                cultureText: "Discover Preston's culture, from local markets to beautiful parks. We also provide essential information on UK medical services.",
+                cultureLink: "Find a local GP",
+                aiPrompts: {
+                    accommodation: "As a helpful mentor for a new international student at UCLAN in Preston, UK, provide 3 concise, practical tips for finding good private accommodation. Include advice on what to look for and potential areas to consider.",
+                    transport: "As a helpful mentor for a new international student at UCLAN in Preston, UK, provide 3 concise, practical tips for using public transport. Mention student discounts or best value tickets.",
+                    culture: "As a helpful mentor for a new international student at UCLAN in Preston, UK, suggest 3 fun and affordable activities to do in or around Preston to experience local culture and meet people."
+                }
+            },
+            zh: {
+                headerTitle: "Detti",
+                changeLangBtn: "更换语言",
+                welcomeTitle: "欢迎来到普雷斯顿中央兰开夏大学！",
+                welcomeText: "Detti 是您的人工智能向导，旨在帮助您安顿下来。您可以在下方提问或获取特定主题的AI建议。",
+                askDettiTitle: "✨ 问Detti任何问题",
+                askDettiText: "有具体问题吗？无论是寻找最好的咖啡店、理解英国俚语，还是管理学业，都可以在这里提问！",
+                askDettiPlaceholder: "例如，我在哪里可以找到一个安静的学习地点？",
+                askDettiBtnText: "提问",
+                getAITipsBtn: "✨ 获取AI建议",
+                accommodationTitle: "住宿",
+                accommodationText: "寻找住处。中央兰开夏大学提供多种大学管理的宿舍。您也可以在市内寻找私人住宿。",
+                accommodationLink: "探索UCLAN住宿",
+                transportTitle: "公共交通",
+                transportText: "在普雷斯顿出行很方便。城市有完善的公交系统，火车站也连接着英国各大主要城市。",
+                transportLink: "了解普雷斯顿巴士",
+                cultureTitle: "本地生活与建议",
+                cultureText: "探索普雷斯顿的文化，从本地市场到美丽的公园。我们还提供有关英国医疗服务的基本信息。",
+                cultureLink: "寻找本地全科医生",
+                 aiPrompts: {
+                    accommodation: "作为一名为英国普雷斯顿中央兰开夏大学的国际新生提供帮助的导师，请提供3个关于寻找优质私人住宿的简洁实用技巧。包括关于寻找什么以及可以考虑的潜在区域的建议。",
+                    transport: "作为一名为英国普雷斯顿中央兰开夏大学的国际新生提供帮助的导师，请提供3个关于使用公共交通的简洁实用技巧。提及学生折扣或最优惠的票价。",
+                    culture: "作为一名为英国普雷斯顿中央兰开夏大学的国际新生提供帮助的导师，请推荐3个在普雷斯顿及其周边地区可以体验当地文化和结识朋友的有趣且经济实惠的活动。"
+                }
+            },
+            ur: {
+                headerTitle: "Detti",
+                changeLangBtn: "زبان تبدیل کریں",
+                welcomeTitle: "پریسٹن، UCLAN میں خوش آمدید!",
+                welcomeText: "Detti آپ کا AI سے چلنے والا رہنما ہے جو آپ کو یہاں بسنے میں مدد فراہم کرے گا۔ نیچے کوئی سوال پوچھیں یا مخصوص موضوعات پر AI سے تجاویز حاصل کریں۔",
+                askDettiTitle: "✨ Detti سے کچھ بھی پوچھیں",
+                askDettiText: "کوئی خاص سوال ہے؟ چاہے وہ بہترین کافی تلاش کرنے، برطانوی بول چال کو سمجھنے، یا اپنی پڑھائی کا انتظام کرنے کے بارے میں ہو، یہاں پوچھیں!",
+                askDettiPlaceholder: "مثال کے طور پر، میں پڑھائی کے لیے پرسکون جگہ کہاں سے تلاش کر سکتا ہوں؟",
+                askDettiBtnText: "پوچھیں",
+                getAITipsBtn: "✨ AI تجاویز حاصل کریں",
+                accommodationTitle: "رہائش",
+                accommodationText: "رہنے کے لیے جگہ تلاش کریں۔ UCLAN یونیورسٹی کے زیر انتظام ہالز کی ایک رینج پیش کرتا ہے۔ آپ شہر میں نجی رہائش بھی تلاش کر سکتے ہیں۔",
+                accommodationLink: "UCLAN رہائش کے بارے میں جانیں",
+                transportTitle: "پبلک ٹرانسپورٹ",
+                transportText: "پریسٹن میں گھومنا پھرنا آسان ہے۔ شہر میں بسوں کی اچھی سہولت ہے، اور ٹرین اسٹیشن برطانیہ کے بڑے شہروں سے رابطہ فراہم کرتا ہے۔",
+                transportLink: "پریسٹن بس کے بارے میں جانیں",
+                cultureTitle: "مقامی زندگی اور مشورے",
+                cultureText: "پریسٹن کی ثقافت کو دریافت کریں، مقامی بازاروں سے لے کر خوبصورت پارکوں تک۔ ہم برطانیہ کی طبی خدمات کے بارے میں بھی ضروری معلومات فراہم کرتے ہیں۔",
+                cultureLink: "مقامی جی پی تلاش کریں",
+                 aiPrompts: {
+                    accommodation: "برطانیہ کے شہر پریسٹن میں UCLAN کے ایک نئے بین الاقوامی طالب علم کے مددگار سرپرست کے طور پر، اچھی نجی رہائش تلاش کرنے کے لیے 3 مختصر، عملی تجاویز فراہم کریں۔ اس میں کیا تلاش کرنا ہے اور کن ممکنہ علاقوں پر غور کرنا ہے اس کے بارے میں مشورے شامل کریں۔",
+                    transport: "برطانیہ کے شہر پریسٹن میں UCLAN کے ایک نئے بین الاقوامی طالب علم کے مددگار سرپرست کے طور پر، پبلک ٹرانسپورٹ استعمال کرنے کے لیے 3 مختصر، عملی تجاویز فراہم کریں۔ طلباء کی رعایتوں یا بہترین قیمت والے ٹکٹوں کا ذکر کریں۔",
+                    culture: "برطانیہ کے شہر پریسٹن میں UCLAN کے ایک نئے بین الاقوامی طالب علم کے مددگار سرپرست کے طور پر، مقامی ثقافت کا تجربہ کرنے اور لوگوں سے ملنے کے لیے پریسٹن میں یا اس کے آس پاس کرنے کے لیے 3 تفریحی اور سستی سرگرمیوں کی تجویز دیں۔"
+                }
+            }
+        };
+        
+        // --- GLOBAL VARIABLES ---
+        let currentLanguage = 'en';
+        const languageSelector = document.getElementById('language-selector');
+        const mainContent = document.getElementById('main-content');
+        
+        // --- GEMINI API CALL LOGIC ---
+        async function callGemini(prompt, elementToUpdate, buttonToDisable) {
+            if (buttonToDisable) buttonToDisable.disabled = true;
+            elementToUpdate.innerHTML = '<div class="loader"></div>';
+
+            const apiKey = "AIzaSyCYkqbpqOxDGUKrUddBLnUqPLlANcvJEto"; // API key will be injected by the environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: prompt }] }]
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API call failed with status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    elementToUpdate.innerHTML = `<div class="ai-response">${text}</div>`;
+                } else {
+                    // Handle cases of blocked content or empty response
+                    const safetyFeedback = result.candidates?.[0]?.finishReason;
+                    let errorMessage = "Sorry, I couldn't get a response. Please try a different question.";
+                    if (safetyFeedback === 'SAFETY') {
+                        errorMessage = "The response was blocked for safety reasons. Please rephrase your question.";
+                    }
+                    elementToUpdate.innerHTML = `<div class="ai-response text-red-700 bg-red-100 border-red-500">${errorMessage}</div>`;
+                }
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                elementToUpdate.innerHTML = `<div class="ai-response text-red-700 bg-red-100 border-red-500">Sorry, something went wrong. Please check your connection and try again.</div>`;
+            } finally {
+                if (buttonToDisable) buttonToDisable.disabled = false;
+            }
+        }
+
+        // --- FEATURE LOGIC ---
+        function askDetti() {
+            const input = document.getElementById('ask-detti-input');
+            const question = input.value.trim();
+            if (!question) return;
+
+            const responseContainer = document.getElementById('ask-detti-response-container');
+            const askButton = document.getElementById('ask-detti-btn');
+            const prompt = `You are a friendly and helpful mentor for international students at UCLAN in Preston, UK. A student is asking: "${question}". Please provide a concise, encouraging, and informative answer in ${currentLanguage}.`;
+            
+            callGemini(prompt, responseContainer, askButton);
+        }
+
+        function getAITips(topic) {
+            const prompt = content[currentLanguage].aiPrompts[topic];
+            const contentContainer = document.getElementById(`${topic}-content`);
+            const aiButton = document.getElementById(`${topic}-ai-btn`);
+            callGemini(prompt, contentContainer, aiButton);
+        }
+
+        // --- UI AND LANGUAGE LOGIC ---
+        function applyLanguage(lang) {
+            currentLanguage = lang;
+            const data = content[lang];
+
+            if (lang === 'ur') {
+                document.documentElement.lang = 'ur';
+                document.body.dir = 'rtl';
+                document.body.style.fontFamily = "'Noto Nastaliq Urdu', serif";
+            } else {
+                document.documentElement.lang = lang;
+                document.body.dir = 'ltr';
+                document.body.style.fontFamily = "'Inter', sans-serif";
+            }
+            
+            const updateText = (id, text) => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = text;
+            };
+
+            const updatePlaceholder = (id, text) => {
+                const element = document.getElementById(id);
+                if(element) element.placeholder = text;
+            };
+
+            // Update all content elements
+            updateText('header-title', data.headerTitle);
+            updateText('change-lang-btn', data.changeLangBtn);
+            updateText('welcome-title', data.welcomeTitle);
+            updateText('welcome-text', data.welcomeText);
+            
+            updateText('ask-detti-title', data.askDettiTitle);
+            updateText('ask-detti-text', data.askDettiText);
+            updatePlaceholder('ask-detti-input', data.askDettiPlaceholder);
+            updateText('ask-detti-btn-text', data.askDettiBtnText);
+
+            updateText('accommodation-title', data.accommodationTitle);
+            updateText('accommodation-text', data.accommodationText);
+            updateText('accommodation-link', data.accommodationLink);
+            updateText('accommodation-ai-btn', data.getAITipsBtn);
+
+            updateText('transport-title', data.transportTitle);
+            updateText('transport-text', data.transportText);
+            updateText('transport-link', data.transportLink);
+            updateText('transport-ai-btn', data.getAITipsBtn);
+
+            updateText('culture-title', data.cultureTitle);
+            updateText('culture-text', data.cultureText);
+            updateText('culture-link', data.cultureLink);
+            updateText('culture-ai-btn', data.getAITipsBtn);
+        }
+
+        function selectLanguage(lang) {
+            localStorage.setItem('userLanguage', lang);
+            applyLanguage(lang);
+            
+            languageSelector.style.opacity = '0';
+            setTimeout(() => {
+                languageSelector.style.display = 'none';
+                mainContent.style.display = 'block';
+                setTimeout(() => mainContent.style.opacity = '1', 50);
+            }, 500);
+        }
+
+        function showLanguageSelector() {
+            mainContent.style.opacity = '0';
+             setTimeout(() => {
+                mainContent.style.display = 'none';
+                languageSelector.style.display = 'flex';
+                 setTimeout(() => languageSelector.style.opacity = '1', 50);
+            }, 500);
+        }
+        
+        window.onload = function() {
+            const savedLang = localStorage.getItem('userLanguage');
+            if (savedLang && content[savedLang]) {
+                applyLanguage(savedLang);
+                languageSelector.style.display = 'none';
+                mainContent.style.display = 'block';
+                mainContent.style.opacity = '1';
+            }
+        };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+</body>
+</html>
