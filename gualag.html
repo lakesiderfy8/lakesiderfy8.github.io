@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explore The Gulag Archipelago | An Interactive Experience</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Somber Neutral -->
+    <!-- Application Structure Plan: This is a classic landing page structure designed for a clear user journey: attract, inform, and convert (in this case, "convert" means encouraging the user to click through to the main SPA). The structure is linear: Hero section for immediate impact and CTA, Features section to explain the value proposition, a "Why Explore?" section for deeper motivation, a powerful Quote section for emotional resonance, and a final CTA in the footer. This top-to-bottom flow is intuitive and effective for guiding the user toward the main application. -->
+    <!-- Visualization & Content Choices: 
+        - Goal: Attract & Engage -> Method: A strong hero section with a compelling headline and sub-headline. -> Interaction: A prominent Call-to-Action (CTA) button. -> Justification: Immediately establishes the page's purpose and provides a clear next step. -> Library/Method: HTML/Tailwind.
+        - Goal: Inform about SPA features -> Method: A three-column features section with icons and short descriptions. -> Interaction: Static, informational. -> Justification: Quickly communicates the unique, interactive aspects of the SPA in a scannable format. -> Library/Method: HTML/Tailwind with Unicode icons.
+        - Goal: Provide deeper context and motivation -> Method: A dedicated text section ("Why Explore?") and a visually separated quote block. -> Interaction: Static. -> Justification: Appeals to the user's intellect and emotions, building a stronger case for exploring the topic. -> Library/Method: HTML/Tailwind.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f1eb;
+            color: #3a3a3a;
+        }
+        .hero-section {
+            background-color: #e5e0d7;
+        }
+        h1, h2, h3 {
+            font-family: 'Lora', serif;
+        }
+        .cta-button {
+            background-color: #a89d8d;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .cta-button:hover {
+            background-color: #8a7e6f;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .feature-card {
+            background-color: #fff;
+            border: 1px solid #e5e0d7;
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header / Hero Section -->
+    <header class="hero-section">
+        <div class="container mx-auto px-6 py-24 md:py-32 text-center">
+            <h1 class="text-4xl md:text-6xl font-bold text-[#5c544a] mb-4">Uncover the Archipelago</h1>
+            <p class="text-lg md:text-xl text-[#7a7165] max-w-3xl mx-auto mb-8">An interactive journey through Aleksandr Solzhenitsyn's monumental work, *The Gulag Archipelago*. Explore the history, understand the themes, and bear witness to the stories.</p>
+            <a href="#" class="cta-button font-bold py-3 px-8 rounded-lg text-lg inline-block">
+                Begin the Exploration
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Features Section -->
+        <section class="py-20 bg-white/50">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold text-[#5c544a]">A New Way to Understand History</h2>
+                    <p class="text-md text-[#7a7165] mt-2 max-w-2xl mx-auto">We've transformed a dense, historical treatise into a dynamic, engaging experience.</p>
+                </div>
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- Feature 1 -->
+                    <div class="feature-card p-8 rounded-lg text-center">
+                        <div class="text-4xl mb-4 text-[#a89d8d]">➔</div>
+                        <h3 class="text-xl font-bold mb-2">Interactive Timeline</h3>
+                        <p class="text-gray-600">Follow the harrowing step-by-step journey of a prisoner—from arbitrary arrest to the brutal realities of camp life.</p>
+                    </div>
+                    <!-- Feature 2 -->
+                    <div class="feature-card p-8 rounded-lg text-center">
+                        <div class="text-4xl mb-4 text-[#a89d8d]">📊</div>
+                        <h3 class="text-xl font-bold mb-2">Data Visualization</h3>
+                        <p class="text-gray-600">Grasp the immense scale of the Gulag system through an interactive chart that visualizes the camp population over time.</p>
+                    </div>
+                    <!-- Feature 3 -->
+                    <div class="feature-card p-8 rounded-lg text-center">
+                        <div class="text-4xl mb-4 text-[#a89d8d]">✨</div>
+                        <h3 class="text-xl font-bold mb-2">AI-Powered Insights</h3>
+                        <p class="text-gray-600">Ask questions about the book's profound themes and generate composite stories to make the history feel more tangible.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Why Explore Section -->
+        <section class="py-20">
+            <div class="container mx-auto px-6 flex flex-col md:flex-row items-center gap-12">
+                <div class="md:w-1/2">
+                    <h2 class="text-3xl md:text-4xl font-bold text-[#5c544a] mb-4">Why Explore This Story?</h2>
+                    <p class="text-gray-700 leading-relaxed mb-4">
+                        *The Gulag Archipelago* is more than a history book; it's a profound meditation on the nature of good and evil, the resilience of the human spirit, and the danger of ideology.
+                    </p>
+                    <p class="text-gray-700 leading-relaxed">
+                        This interactive experience is designed for students, historians, and curious minds alike. It makes a difficult but essential piece of 20th-century history accessible, allowing you to engage with the material in a way that a physical book cannot offer. It is a tool for learning, reflection, and remembrance.
+                    </p>
+                </div>
+                <div class="md:w-1/2 w-full bg-white p-8 rounded-lg shadow-sm border border-gray-200">
+                    <img src="https://placehold.co/600x400/e5e0d7/3a3a3a?text=Visual+Element" alt="Abstract visual representing the Archipelago" class="rounded-lg w-full">
+                </div>
+            </div>
+        </section>
+
+        <!-- Quote Section -->
+        <section class="py-20 bg-[#e5e0d7]">
+            <div class="container mx-auto px-6 text-center">
+                <blockquote class="max-w-4xl mx-auto">
+                    <p class="text-2xl md:text-3xl font-medium text-[#5c544a] italic">"The line separating good and evil passes not through states, nor between classes, nor between political parties either — but right through every human heart."</p>
+                    <cite class="block text-right text-lg text-[#7a7165] mt-6 not-italic">— Aleksandr Solzhenitsyn</cite>
+                </blockquote>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-[#d1c9bd] text-[#5c544a]">
+        <div class="container mx-auto px-6 py-12 text-center">
+            <p class="mb-4">This interactive project is a digital companion to a timeless work of testimony.</p>
+            <a href="#" class="cta-button font-bold py-3 px-8 rounded-lg text-lg inline-block">
+                Start Your Journey
+            </a>
+            <p class="text-sm mt-8 text-[#7a7165]">Project created for educational purposes. 2025.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
