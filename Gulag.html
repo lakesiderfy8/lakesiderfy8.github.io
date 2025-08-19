@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Gulag Archipelago: An Interactive Exploration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827;
+            color: #D1D5DB;
+        }
+        .font-lora {
+            font-family: 'Lora', serif;
+        }
+        .hero-section {
+            background-image: linear-gradient(rgba(17, 24, 39, 0.8), rgba(17, 24, 39, 1)), url('https://placehold.co/1920x1080/111827/374151?text=GULAG');
+            background-size: cover;
+            background-position: center;
+        }
+        .section-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+        }
+        .interactive-map-container svg {
+            width: 100%;
+            height: auto;
+            stroke: #4B5563;
+            stroke-width: 1;
+            fill: #1F2937;
+        }
+        .camp-dot {
+            fill: #EF4444;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            r: 8; /* Base radius */
+        }
+        .camp-dot:hover {
+            fill: #F87171;
+            r: 12; /* Larger radius on hover */
+            filter: drop-shadow(0 0 8px #EF4444);
+        }
+        /* Modal styles */
+        .modal {
+            transition: opacity 0.3s ease;
+        }
+        /* Scroll animations */
+        .fade-in-section {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .fade-in-section.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Gemini feature styles */
+        .gemini-button {
+            transition: all 0.3s ease;
+        }
+        .gemini-button:disabled {
+            cursor: not-allowed;
+            background-color: #4B5563;
+        }
+        .loader {
+            border: 4px solid #4B5563;
+            border-top: 4px solid #EF4444;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-300">
+
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 bg-gray-900 bg-opacity-80 backdrop-blur-md z-50 shadow-lg">
+        <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-white font-lora">The Gulag Archipelago</h1>
+            <nav class="hidden md:flex space-x-8">
+                <a href="#author" class="hover:text-red-400 transition-colors">The Author</a>
+                <a href="#map" class="hover:text-red-400 transition-colors">The Camps</a>
+                <a href="#themes" class="hover:text-red-400 transition-colors">Key Themes</a>
+                <a href="#impact" class="hover:text-red-400 transition-colors">Impact</a>
+                <a href="#reflections" class="hover:text-red-400 transition-colors">Reflections</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section h-screen flex items-center justify-center text-center pt-16">
+        <div class="fade-in-section is-visible">
+            <h2 class="text-5xl md:text-7xl lg:text-8xl text-white section-title">THE GULAG ARCHIPELAGO</h2>
+            <p class="font-lora text-xl md:text-2xl text-gray-300 mt-4">An Experiment in Literary Investigation</p>
+            <p class="text-lg md:text-xl text-gray-400 mt-2">by Aleksandr Solzhenitsyn</p>
+        </div>
+    </section>
+
+    <main class="container mx-auto px-6 py-16 md:py-24 space-y-24 md:space-y-32">
+
+        <!-- Introduction Section -->
+        <section id="intro" class="fade-in-section">
+            <div class="max-w-4xl mx-auto text-center">
+                <h3 class="text-4xl md:text-5xl text-red-400 section-title mb-6">"Bless you, prison, for having been in my life."</h3>
+                <p class="text-lg md:text-xl font-lora leading-relaxed">
+                    'The Gulag Archipelago' is not a traditional history book. Solzhenitsyn described it as an "experiment in literary investigation." It is a vast tapestry woven from his own experiences as a prisoner, the eyewitness testimonies of 227 other survivors, and meticulous research. The book exposes the brutal reality of the Soviet Union's vast network of forced labor camps, a system of terror that consumed millions of lives.
+                </p>
+            </div>
+        </section>
+
+        <!-- Author Section -->
+        <section id="author" class="fade-in-section">
+            <div class="grid md:grid-cols-5 gap-8 md:gap-12 items-center">
+                <div class="md:col-span-2">
+                    <img src="https://placehold.co/400x500/1F2937/4B5563?text=Solzhenitsyn" alt="Portrait of Aleksandr Solzhenitsyn" class="rounded-lg shadow-2xl w-full h-auto object-cover" onerror="this.onerror=null;this.src='https://placehold.co/400x500/1F2937/4B5563?text=Image+Not+Found';">
+                </div>
+                <div class="md:col-span-3">
+                    <h3 class="text-4xl md:text-5xl text-white section-title mb-4">Aleksandr Solzhenitsyn</h3>
+                    <p class="text-lg font-lora mb-4">A Voice Against Tyranny</p>
+                    <p class="leading-relaxed mb-4">
+                        Born in 1918, Aleksandr Isayevich Solzhenitsyn was a decorated Red Army captain in World War II. In 1945, he was arrested for writing private letters critical of Joseph Stalin and sentenced to eight years in the Gulag. This experience transformed him. After his release and exile, he began to secretly write about the horrors he had witnessed.
+                    </p>
+                    <p class="leading-relaxed">
+                        He was awarded the Nobel Prize in Literature in 1970 "for the ethical force with which he has pursued the indispensable traditions of Russian literature." After the KGB discovered a manuscript of 'The Gulag Archipelago', it was published in the West in 1973. The Soviet Union stripped him of his citizenship and exiled him the following year. He returned to Russia in 1994 after the collapse of the Soviet Union.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Map Section -->
+        <section id="map" class="fade-in-section">
+            <h3 class="text-4xl md:text-5xl text-white section-title text-center mb-4">The Archipelago of Terror</h3>
+            <p class="max-w-3xl mx-auto text-center text-lg font-lora mb-12">
+                The Gulag was not a single place but a vast "archipelago" of camps stretching across the entire Soviet Union. Click on the map markers to reveal information about some of the most notorious camp complexes.
+            </p>
+            <div class="relative interactive-map-container bg-gray-800 p-4 rounded-lg shadow-2xl">
+                <!-- Simplified SVG Map of the USSR -->
+                <svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg">
+                    <!-- A very simplified outline of the USSR for illustrative purposes -->
+                    <path d="M10 490 L10 100 L150 10 L250 50 L400 20 L600 30 L750 80 L900 50 L990 150 L950 300 L800 450 L600 480 L400 490 L10 490 Z" />
+                    <!-- Camp Dots - Coordinates are approximate for visual representation -->
+                    <circle class="camp-dot" cx="280" cy="100" data-title="Solovki" data-info="Often considered the 'mother of the Gulag,' the Solovki camp was established in the 1920s on a former monastery island. It was a testing ground for the brutal techniques later used throughout the system."></circle>
+                    <circle class="camp-dot" cx="450" cy="80" data-title="Vorkuta" data-info="A major coal-mining center in the Arctic Circle. Prisoners endured extreme cold and brutal conditions. The site of a major uprising in 1953 after Stalin's death."></circle>
+                    <circle class="camp-dot" cx="850" cy="150" data-title="Kolyma" data-info="Synonymous with the Gulag's worst horrors. A vast region in the Russian Far East where prisoners mined gold in permafrost. The death rate was astronomical. Solzhenitsyn called it the 'pole of cold and cruelty.'"></circle>
+                    <circle class="camp-dot" cx="600" cy="250" data-title="Karaganda (Karlag)" data-info="A massive camp complex in Kazakhstan, covering an area larger than France. It was a major agricultural and industrial camp, holding hundreds of thousands of prisoners."></circle>
+                    <circle class="camp-dot" cx="350" cy="350" data-title="White Sea-Baltic Canal" data-info="One of Stalin's first great 'slave labor' projects. Tens of thousands of prisoners died during its construction in the early 1930s, using primitive tools to dig a 227-kilometer canal."></circle>
+                </svg>
+                <div id="map-tooltip" class="absolute hidden bg-gray-900 text-white p-4 rounded-lg shadow-lg max-w-xs z-10 border border-gray-700">
+                    <h4 id="tooltip-title" class="font-bold text-red-400 text-lg mb-2"></h4>
+                    <p id="tooltip-info" class="text-sm"></p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Key Themes Section -->
+        <section id="themes" class="fade-in-section">
+            <h3 class="text-4xl md:text-5xl text-white section-title text-center mb-12">Key Themes</h3>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Theme Card 1 -->
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700">
+                    <h4 class="text-2xl font-bold text-red-400 mb-3">The Arrest</h4>
+                    <p>Solzhenitsyn details the arbitrary and terrifying nature of arrests, where anyone could be taken at any time for any reason, plunging them into the "sewage disposal system" of the state.</p>
+                </div>
+                <!-- Theme Card 2 -->
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700">
+                    <h4 class="text-2xl font-bold text-red-400 mb-3">Dehumanization</h4>
+                    <p>The system was designed to strip prisoners of their identity, humanity, and will to live through starvation, overwork, degradation, and the constant threat of violence.</p>
+                </div>
+                <!-- Theme Card 3 -->
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700">
+                    <h4 class="text-2xl font-bold text-red-400 mb-3">Survival & Resistance</h4>
+                    <p>Despite the horror, the book is a testament to the resilience of the human spirit. It explores the small acts of resistance, kindness, and the internal struggle to remain human.</p>
+                </div>
+                <!-- Theme Card 4 -->
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700">
+                    <h4 class="text-2xl font-bold text-red-400 mb-3">The Nature of Evil</h4>
+                    <p>Solzhenitsyn argues that the line between good and evil runs not between classes or nations, but "right through every human heart." He explores how ordinary people became perpetrators of immense cruelty.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Impact Section -->
+        <section id="impact" class="fade-in-section">
+            <h3 class="text-4xl md:text-5xl text-white section-title text-center mb-12">The Book That Shook the World</h3>
+            <div class="max-w-4xl mx-auto bg-gray-800 p-8 rounded-lg shadow-2xl border border-gray-700">
+                <p class="text-lg font-lora leading-relaxed mb-6">
+                    The publication of 'The Gulag Archipelago' was a seismic event. In the West, it shattered any remaining illusions about the nature of the Soviet Union, particularly among left-wing intellectuals. It provided an undeniable, comprehensive, and deeply human account of the terror that underpinned the Soviet state.
+                </p>
+                <p class="text-lg font-lora leading-relaxed">
+                    Inside the USSR, smuggled and secretly copied (samizdat) versions of the book circulated widely, despite the severe risks. It became a foundational text for the dissident movement, giving a voice to millions who had suffered in silence. The book played a crucial role in undermining the moral and ideological legitimacy of the Communist Party, contributing to the eventual collapse of the Soviet Union.
+                </p>
+                <blockquote class="border-l-4 border-red-400 pl-6 mt-8 italic text-gray-400">
+                    "This book is our common, collective monument to all those who were tortured and murdered."
+                    <cite class="block not-italic mt-2">- Aleksandr Solzhenitsyn</cite>
+                </blockquote>
+            </div>
+        </section>
+
+        <!-- Gemini Reflections Section -->
+        <section id="reflections" class="fade-in-section">
+            <h3 class="text-4xl md:text-5xl text-white section-title text-center mb-4">Reflections & AI Insights</h3>
+            <p class="max-w-3xl mx-auto text-center text-lg font-lora mb-12">
+                What questions or thoughts does this work raise for you? Enter your reflections below and get an AI-generated insight to deepen your understanding.
+            </p>
+            <div class="max-w-3xl mx-auto bg-gray-800 p-8 rounded-lg shadow-2xl border border-gray-700">
+                <textarea id="reflection-input" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-4 text-lg text-gray-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition" rows="5" placeholder="For example: 'What did Solzhenitsyn mean by the line between good and evil?' or 'How did prisoners maintain their humanity?'..."></textarea>
+                <button id="gemini-button" class="gemini-button w-full mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg text-lg">
+                    ✨ Generate Insights with Gemini
+                </button>
+                <div id="loader-container" class="hidden flex justify-center mt-6">
+                    <div class="loader"></div>
+                </div>
+                <div id="gemini-response" class="mt-6 p-6 bg-gray-900 rounded-lg border border-gray-700 text-lg leading-relaxed font-lora hidden"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 border-t border-gray-800 mt-16">
+        <div class="container mx-auto px-6 py-8 text-center text-gray-500">
+            <p>This page is an educational resource and a tribute to the victims of the Gulag.</p>
+            <p class="text-sm mt-2">Content created for interactive exploration of 'The Gulag Archipelago'.</p>
+        </div>
+    </footer>
+
+    <!-- Modal for Map Info -->
+    <div id="modal" class="modal fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div id="modal-content" class="bg-gray-800 w-full max-w-md p-8 rounded-lg shadow-2xl border border-gray-700 transform scale-95 transition-transform duration-300">
+            <h3 id="modal-title" class="text-2xl font-bold text-red-400 mb-4"></h3>
+            <p id="modal-info" class="text-gray-300 leading-relaxed"></p>
+            <button id="modal-close" class="mt-6 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-colors w-full">Close</button>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Interactive Map Logic ---
+            const campDots = document.querySelectorAll('.camp-dot');
+            const modal = document.getElementById('modal');
+            const modalContent = document.getElementById('modal-content');
+            const modalTitle = document.getElementById('modal-title');
+            const modalInfo = document.getElementById('modal-info');
+            const modalClose = document.getElementById('modal-close');
+            
+            const tooltip = document.getElementById('map-tooltip');
+            const tooltipTitle = document.getElementById('tooltip-title');
+            const tooltipInfo = document.getElementById('tooltip-info');
+            const mapContainer = document.querySelector('.interactive-map-container');
+
+            campDots.forEach(dot => {
+                const title = dot.dataset.title;
+                const info = dot.dataset.info;
+
+                dot.addEventListener('click', () => {
+                    modalTitle.textContent = title;
+                    modalInfo.textContent = info;
+                    modal.classList.remove('opacity-0', 'pointer-events-none');
+                    modalContent.classList.add('scale-100');
+                    modalContent.classList.remove('scale-95');
+                });
+                
+                dot.addEventListener('mousemove', (e) => {
+                    if (window.innerWidth < 768) return;
+                    const rect = mapContainer.getBoundingClientRect();
+                    tooltip.style.left = `${e.clientX - rect.left + 15}px`;
+                    tooltip.style.top = `${e.clientY - rect.top + 15}px`;
+                });
+
+                dot.addEventListener('mouseenter', () => {
+                     if (window.innerWidth < 768) return;
+                    tooltipTitle.textContent = title;
+                    tooltipInfo.textContent = info;
+                    tooltip.classList.remove('hidden');
+                });
+                
+                dot.addEventListener('mouseleave', () => {
+                     if (window.innerWidth < 768) return;
+                    tooltip.classList.add('hidden');
+                });
+            });
+
+            function closeModal() {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                modalContent.classList.remove('scale-100');
+                modalContent.classList.add('scale-95');
+            }
+
+            modalClose.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+
+            // --- Scroll Animation Logic ---
+            const sections = document.querySelectorAll('.fade-in-section');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+            
+            // --- Smooth Scrolling for Nav Links ---
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            // --- Gemini API Integration ---
+            const geminiButton = document.getElementById('gemini-button');
+            const reflectionInput = document.getElementById('reflection-input');
+            const geminiResponseContainer = document.getElementById('gemini-response');
+            const loaderContainer = document.getElementById('loader-container');
+
+            geminiButton.addEventListener('click', generateInsights);
+
+            async function generateInsights() {
+                const userInput = reflectionInput.value.trim();
+                if (!userInput) {
+                    geminiResponseContainer.textContent = "Please enter a reflection or question first.";
+                    geminiResponseContainer.classList.remove('hidden');
+                    return;
+                }
+
+                geminiButton.disabled = true;
+                geminiResponseContainer.classList.add('hidden');
+                loaderContainer.classList.remove('hidden');
+
+                const prompt = `
+                    You are an expert historian and literary analyst specializing in Aleksandr Solzhenitsyn's 'The Gulag Archipelago'. 
+                    A user has the following question or reflection about the book: "${userInput}".
+                    
+                    Please provide a thoughtful, insightful, and historically accurate response that is about 3-4 paragraphs long. 
+                    Your response should help the user deepen their understanding of the book's themes, context, or Solzhenitsyn's perspective. 
+                    Maintain a respectful and educational tone.
+                `;
+
+                try {
+                    const responseText = await callGeminiApiWithBackoff(prompt);
+                    geminiResponseContainer.textContent = responseText;
+                } catch (error) {
+                    console.error("Error calling Gemini API:", error);
+                    geminiResponseContainer.textContent = "Sorry, an error occurred while generating insights. Please try again later.";
+                } finally {
+                    geminiButton.disabled = false;
+                    loaderContainer.classList.add('hidden');
+                    geminiResponseContainer.classList.remove('hidden');
+                }
+            }
+            
+            async function callGeminiApiWithBackoff(prompt, maxRetries = 3) {
+                let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiKey = "AIzaSyCYkqbpqOxDGUKrUddBLnUqPLlANcvJEto"; // API key is handled by the environment
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                let delay = 1000; // Start with 1 second delay
+                for (let i = 0; i < maxRetries; i++) {
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        const result = await response.json();
+                        
+                        if (result.candidates && result.candidates.length > 0 &&
+                            result.candidates[0].content && result.candidates[0].content.parts &&
+                            result.candidates[0].content.parts.length > 0) {
+                            return result.candidates[0].content.parts[0].text;
+                        } else {
+                            throw new Error("Invalid response structure from Gemini API");
+                        }
+                    } catch (error) {
+                        console.error(`Attempt ${i + 1} failed. Retrying in ${delay}ms...`, error);
+                        if (i < maxRetries - 1) {
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            delay *= 2; // Exponential backoff
+                        } else {
+                            throw error; // Rethrow error after max retries
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>
