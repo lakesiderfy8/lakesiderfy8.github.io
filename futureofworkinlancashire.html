@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Future of Work in Lancashire: An Interactive Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Slate & Sky -->
+    <!-- Application Structure Plan: The SPA is designed as a narrative journey in four scrollable sections. 1) 'The Lancashire Challenge': Presents the core socio-economic problems (demographics, skills gap) using key stats and a central interactive chart. This establishes the 'why'. 2) 'Two Paths Forward': A side-by-side comparative dashboard of UBI vs. Retraining. Users can toggle UBI scenarios to see costs change dynamically. This allows for direct comparison of the two core policy ideas. 3) 'Comparative Impact': A visual matrix that synthesizes the trade-offs across multiple dimensions (cost, equity, etc.) for a quick, high-level understanding. 4) 'The Hybrid Solution': Presents the report's final recommendation and implementation roadmap in a clear, step-by-step format. 5) 'Generate Briefing': A new Gemini-powered section to create custom policy summaries for different stakeholders, turning analysis into an actionable communication tool. -->
+    <!-- Visualization & Content Choices: 1. Lancashire Demographics: Goal=Inform on aging population. Viz=Doughnut Chart (Chart.js). Interaction=None, static display of key challenge. Justification=Clear, immediate visual of population structure. 2. Skills Chasm: Goal=Highlight workforce misalignment. Viz=Grouped Bar Chart (Chart.js). Interaction=None. Justification=Directly compares Lancashire's job sector composition to England's, showing the manufacturing over-representation. 3. UBI Fiscal Model: Goal=Compare UBI scenario costs. Viz=Bar Chart (Chart.js). Interaction=Buttons to select Scenario A, B, or C, which dynamically updates chart data and descriptive text. Justification=Makes the abstract cost models tangible and interactive. 4. Retraining Fiscal Model: Goal=Show ROI over time. Viz=Combined Bar (Cost) & Line (ROI) Chart (Chart.js). Interaction=None. Justification=Effectively shows the relationship between upfront investment and long-term fiscal return. 5. Comparative Matrix: Goal=Synthesize comparison. Viz=HTML Table with icons. Interaction=None. Justification=Provides a scannable, high-level summary of the core trade-offs. 6. Gemini Briefing Generator: Goal=Enable action-oriented communication. Viz=Interactive form (dropdowns, button) with a dynamic text output area. Interaction=User selects policy and audience, clicks generate. Justification=Leverages LLM capabilities to translate complex data into tailored, practical communications for specific audiences. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #334155; /* slate-700 */
+        }
+        .section-title {
+            color: #0f172a; /* slate-900 */
+        }
+        .stat-card {
+            background-color: white;
+            border: 1px solid #e2e8f0; /* slate-200 */
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .nav-button {
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .nav-button.active {
+            background-color: #0284c7; /* sky-600 */
+            color: white;
+        }
+        .policy-toggle-btn {
+            transition: all 0.3s ease;
+        }
+        .policy-toggle-btn.active {
+            background-color: #0c4a6e; /* sky-900 */
+            color: white;
+            box-shadow: 0 4px 14px 0 rgba(2, 132, 199, 0.39);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .gemini-loader {
+            display: none;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0284c7;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-slate-800">Lancashire's Future of Work</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#challenge" class="nav-button text-slate-600 hover:bg-slate-100 px-3 py-2 rounded-md text-sm font-medium">The Challenge</a>
+                        <a href="#solutions" class="nav-button text-slate-600 hover:bg-slate-100 px-3 py-2 rounded-md text-sm font-medium">Two Paths</a>
+                        <a href="#impact" class="nav-button text-slate-600 hover:bg-slate-100 px-3 py-2 rounded-md text-sm font-medium">Impact Analysis</a>
+                        <a href="#recommendation" class="nav-button text-slate-600 hover:bg-slate-100 px-3 py-2 rounded-md text-sm font-medium">Recommendation</a>
+                        <a href="#briefing" class="nav-button text-slate-600 hover:bg-slate-100 px-3 py-2 rounded-md text-sm font-medium">Briefing Tool ✨</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <!-- Section 1: The Challenge -->
+        <section id="challenge" class="mb-16 md:mb-24 scroll-mt-16">
+            <h2 class="section-title text-3xl md:text-4xl font-bold text-center mb-4">The Lancashire Challenge</h2>
+            <p class="max-w-3xl mx-auto text-center text-slate-600 mb-12">Lancashire is at a crossroads, facing a post-industrial transition while bracing for the impact of AI and automation. The region's future prosperity depends on navigating a complex landscape of demographic shifts, economic vulnerabilities, and a growing gap between the skills of today's workforce and the needs of tomorrow's industries.</p>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                <div class="stat-card p-6">
+                    <h3 class="font-bold text-lg text-slate-800 mb-2">Aging Population</h3>
+                    <p class="text-3xl font-bold text-sky-600">1.9%</p>
+                    <p class="text-slate-500">Annual growth rate of the 65+ population, outpacing the working-age group.</p>
+                </div>
+                <div class="stat-card p-6">
+                    <h3 class="font-bold text-lg text-slate-800 mb-2">Skills Mismatch</h3>
+                    <p class="text-3xl font-bold text-sky-600">39.6%</p>
+                    <p class="text-slate-500">Of working-age population holds degree-level qualifications, vs. 47.2% for Great Britain.</p>
+                </div>
+                <div class="stat-card p-6 md:col-span-2 lg:col-span-1">
+                    <h3 class="font-bold text-lg text-slate-800 mb-2">Manufacturing Legacy</h3>
+                    <p class="text-3xl font-bold text-sky-600">12.9%</p>
+                    <p class="text-slate-500">Of employees are in manufacturing, a sector vulnerable to automation (vs. 7.4% for England).</p>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-5 gap-8 items-center">
+                <div class="md:col-span-2">
+                    <h3 class="text-2xl font-bold text-slate-800 mb-4">The Demographic Fork</h3>
+                    <p class="text-slate-600 mb-4">Lancashire's population is not uniform. Urban centers like Preston are growing due to international migration, while coastal districts like Fylde are aging rapidly. This divergence requires nuanced policy solutions that can address both growth and decline simultaneously.</p>
+                     <div class="chart-container h-64 md:h-auto">
+                        <canvas id="demographicsChart"></canvas>
+                    </div>
+                </div>
+                <div class="md:col-span-3">
+                    <h3 class="text-2xl font-bold text-slate-800 mb-4">The Structural Skills Chasm</h3>
+                     <p class="text-slate-600 mb-4">The region's economy is shifting towards high-tech sectors like cyber and clean energy, yet its workforce remains concentrated in traditional industries. This chart highlights the structural misalignment between Lancashire's employment fabric and the national average, illustrating the scale of the reskilling challenge.</p>
+                    <div class="chart-container h-80 md:h-96">
+                        <canvas id="skillsChasmChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Two Paths Forward -->
+        <section id="solutions" class="mb-16 md:mb-24 scroll-mt-16">
+            <h2 class="section-title text-3xl md:text-4xl font-bold text-center mb-4">Two Paths Forward</h2>
+            <p class="max-w-3xl mx-auto text-center text-slate-600 mb-12">To address its challenges, Lancashire can consider two distinct policy interventions. One focuses on providing broad **social insurance** through a Universal Basic Income (UBI). The other makes a targeted **human capital investment** with AI-Powered Retraining Subsidies. Explore the models below to understand their mechanics and costs.</p>
+
+            <div class="grid lg:grid-cols-2 gap-8 md:gap-12">
+                <!-- UBI Column -->
+                <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg border border-slate-200">
+                    <h3 class="text-2xl font-bold text-slate-800 mb-2">Model 1: Universal Basic Income (UBI)</h3>
+                    <p class="text-slate-600 mb-6">UBI provides a regular, unconditional cash payment to all residents, creating a foundational safety net. This model explores three potential scenarios, each with different payment levels and fiscal implications. Use the buttons below to see how the net cost changes.</p>
+                    
+                    <div class="flex flex-wrap justify-center gap-2 mb-6">
+                        <button id="ubi-a-btn" class="policy-toggle-btn active text-sm font-semibold py-2 px-4 rounded-full border border-slate-300 bg-white text-slate-700">Partial/Transitional</button>
+                        <button id="ubi-b-btn" class="policy-toggle-btn text-sm font-semibold py-2 px-4 rounded-full border border-slate-300 bg-white text-slate-700">Full/Poverty-Line</button>
+                        <button id="ubi-c-btn" class="policy-toggle-btn text-sm font-semibold py-2 px-4 rounded-full border border-slate-300 bg-white text-slate-700">Full+</button>
+                    </div>
+
+                    <div id="ubi-description" class="text-center mb-4 p-4 bg-sky-50 rounded-lg border border-sky-200">
+                        <p class="text-sky-800"></p>
+                    </div>
+
+                    <div class="chart-container h-80 md:h-96">
+                        <canvas id="ubiCostChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Retraining Column -->
+                <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg border border-slate-200">
+                    <h3 class="text-2xl font-bold text-slate-800 mb-2">Model 2: AI-Powered Retraining</h3>
+                    <p class="text-slate-600 mb-6">This targeted program provides subsidies for workers in at-risk jobs to gain skills for Lancashire's growth sectors. It uses AI to deliver personalized training and aims for a direct return on investment through higher wages and employment.</p>
+                    
+                     <div class="text-center mb-4 p-4 bg-sky-50 rounded-lg border border-sky-200">
+                        <p class="text-sky-800">This model scales over 5 years, training up to 15,000 workers annually. The chart shows the annual public cost against the cumulative fiscal return from a more productive workforce.</p>
+                    </div>
+
+                    <div class="chart-container h-80 md:h-96 mt-12">
+                        <canvas id="retrainingRoiChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section 3: Comparative Impact -->
+        <section id="impact" class="mb-16 md:mb-24 scroll-mt-16">
+            <h2 class="section-title text-3xl md:text-4xl font-bold text-center mb-4">Comparative Impact Analysis</h2>
+            <p class="max-w-3xl mx-auto text-center text-slate-600 mb-12">Choosing between UBI and retraining involves significant trade-offs. The decision is a strategic choice between broad social insurance and targeted human capital investment. This matrix summarizes the key differences across fiscal, social, and economic dimensions.</p>
+
+            <div class="overflow-x-auto bg-white rounded-lg shadow-lg border border-slate-200">
+                <table class="w-full text-sm text-left text-slate-500">
+                    <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">Metric</th>
+                            <th scope="col" class="px-6 py-3">Universal Basic Income (Full)</th>
+                            <th scope="col" class="px-6 py-3">AI-Retraining Subsidies</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b">
+                            <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">Net Annual Fiscal Cost</th>
+                            <td class="px-6 py-4"><span class="font-bold text-red-600">High (£3.17bn)</span></td>
+                            <td class="px-6 py-4"><span class="font-bold text-green-600">Low (£37.5m)</span></td>
+                        </tr>
+                        <tr class="border-b bg-slate-50">
+                            <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">Primary Beneficiaries</th>
+                            <td class="px-6 py-4">Entire Population (Universal)</td>
+                            <td class="px-6 py-4">At-Risk Working-Age Population (Targeted)</td>
+                        </tr>
+                        <tr class="border-b">
+                            <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">Poverty Reduction</th>
+                            <td class="px-6 py-4"><span class="font-semibold text-sky-700">High, Direct, Immediate</span></td>
+                            <td class="px-6 py-4">Moderate, Indirect, Long-Term</td>
+                        </tr>
+                         <tr class="border-b bg-slate-50">
+                            <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">Health & Well-being</th>
+                            <td class="px-6 py-4"><span class="font-semibold text-sky-700">High & Direct</span> (especially mental health)</td>
+                            <td class="px-6 py-4">Moderate & Indirect (via re-employment)</td>
+                        </tr>
+                        <tr class="border-b">
+                            <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">Alignment with Growth Sectors</th>
+                            <td class="px-6 py-4">Indirect (enables risk-taking)</td>
+                            <td class="px-6 py-4"><span class="font-semibold text-sky-700">High & Direct</span> (supplies skilled labor)</td>
+                        </tr>
+                        <tr class="bg-slate-50">
+                            <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">Administrative Complexity</th>
+                            <td class="px-6 py-4"><span class="font-bold text-green-600">Very Low</span></td>
+                            <td class="px-6 py-4"><span class="font-bold text-amber-600">Moderate</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 4: Recommendation -->
+        <section id="recommendation" class="mb-16 md:mb-24 scroll-mt-16">
+            <h2 class="section-title text-3xl md:text-4xl font-bold text-center mb-4">A Hybrid 'Skills and Security' Model</h2>
+            <p class="max-w-3xl mx-auto text-center text-slate-600 mb-12">Neither policy is a silver bullet. The most effective strategy for Lancashire is a synergistic approach that combines the strengths of both. A modest, transitional UBI provides a foundation of **security**, enabling workers to fully participate in a large-scale **skills** program. This creates a virtuous cycle of security, skills, and sustainable growth.</p>
+
+            <div class="max-w-4xl mx-auto">
+                <div class="relative border-l-2 border-sky-300 ml-4 md:ml-0">
+                    <!-- Phase 1 -->
+                    <div class="mb-10 ml-8">
+                        <span class="absolute flex items-center justify-center w-8 h-8 bg-sky-200 rounded-full -left-4 ring-4 ring-white">
+                            <span class="font-bold text-sky-700">1</span>
+                        </span>
+                        <h3 class="flex items-center mb-1 text-lg font-semibold text-slate-900">Phase 1 (Years 1-2): Pilot & Partnership Building</h3>
+                        <p class="block mb-2 text-sm font-normal leading-none text-slate-500">Establish the foundation with localized trials and industry collaboration.</p>
+                        <ul class="list-disc list-inside text-slate-600 space-y-1">
+                            <li>Launch a UBI pilot in one or two diverse districts to gather local data.</li>
+                            <li>Co-design the AI-retraining curriculum with key employers in cyber, energy, and manufacturing.</li>
+                        </ul>
+                    </div>
+                    <!-- Phase 2 -->
+                    <div class="mb-10 ml-8">
+                        <span class="absolute flex items-center justify-center w-8 h-8 bg-sky-200 rounded-full -left-4 ring-4 ring-white">
+                            <span class="font-bold text-sky-700">2</span>
+                        </span>
+                        <h3 class="flex items-center mb-1 text-lg font-semibold text-slate-900">Phase 2 (Years 3-5): Scaled Rollout</h3>
+                        <p class="block mb-2 text-sm font-normal leading-none text-slate-500">Expand the programs based on pilot evidence and partnerships.</p>
+                        <ul class="list-disc list-inside text-slate-600 space-y-1">
+                            <li>Begin county-wide rollout of a modest, Transitional UBI.</li>
+                            <li>Launch the full-scale AI-Retraining Subsidy program for eligible workers.</li>
+                        </ul>
+                    </div>
+                    <!-- Phase 3 -->
+                    <div class="ml-8">
+                        <span class="absolute flex items-center justify-center w-8 h-8 bg-sky-200 rounded-full -left-4 ring-4 ring-white">
+                            <span class="font-bold text-sky-700">3</span>
+                        </span>
+                        <h3 class="flex items-center mb-1 text-lg font-semibold text-slate-900">Phase 3 (Years 5+): Review & Integration</h3>
+                        <p class="block mb-2 text-sm font-normal leading-none text-slate-500">Evaluate, adapt, and create a sustainable, integrated system.</p>
+                        <ul class="list-disc list-inside text-slate-600 space-y-1">
+                            <li>Conduct a comprehensive evaluation of the fiscal and social impacts.</li>
+                            <li>Assess the feasibility of enhancing the policy framework, funded by economic growth.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Gemini Briefing Tool -->
+        <section id="briefing" class="scroll-mt-16 bg-white p-6 md:p-8 rounded-lg shadow-lg border border-slate-200">
+            <h2 class="section-title text-3xl md:text-4xl font-bold text-center mb-4">Generate Your Custom Policy Briefing ✨</h2>
+            <p class="max-w-3xl mx-auto text-center text-slate-600 mb-8">Turn analysis into action. Select a policy and a target audience below, and the Gemini model will generate a tailored briefing note to help you communicate these complex ideas effectively.</p>
+            
+            <div class="max-w-2xl mx-auto">
+                <div class="grid sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="policy-select" class="block text-sm font-medium text-slate-700">Policy Focus</label>
+                        <select id="policy-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm rounded-md">
+                            <option value="Hybrid Model">Recommended Hybrid Model</option>
+                            <option value="UBI">Universal Basic Income (UBI) Only</option>
+                            <option value="AI-Retraining">AI-Retraining Only</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="audience-select" class="block text-sm font-medium text-slate-700">Target Audience</label>
+                        <select id="audience-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm rounded-md">
+                            <option>Local Business Owners</option>
+                            <option>Community Leaders</option>
+                            <option>At-Risk Workers</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button id="generate-briefing-btn" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">
+                        Generate Briefing
+                    </button>
+                </div>
+            </div>
+
+            <div id="briefing-output-container" class="mt-8 max-w-3xl mx-auto hidden">
+                <div class="flex justify-center mb-4">
+                    <div id="gemini-loader" class="gemini-loader"></div>
+                </div>
+                <div id="briefing-result" class="bg-slate-50 p-6 rounded-lg border border-slate-200 prose prose-slate max-w-none">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-lg font-bold text-slate-800 m-0">Generated Briefing Note:</h4>
+                        <button id="copy-briefing-btn" class="text-sm text-sky-600 hover:text-sky-800 font-medium">Copy Text</button>
+                    </div>
+                    <p id="briefing-text" class="whitespace-pre-wrap"></p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-800 text-slate-300 mt-16 md:mt-24">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm">
+            <p>&copy; 2025 Lancashire Future Works Initiative. An interactive summary based on the report 'Navigating the Future of Work in Lancashire'.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const chartStyles = {
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#475569', // slate-600
+                            font: {
+                                family: 'Inter, sans-serif'
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#e2e8f0' // slate-200
+                        },
+                        ticks: {
+                            color: '#475569'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#475569'
+                        }
+                    }
+                },
+                maintainAspectRatio: false,
+                responsive: true
+            };
+
+            // Chart 1: Demographics
+            const demographicsCtx = document.getElementById('demographicsChart').getContext('2d');
+            new Chart(demographicsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Working Age (20-64)', 'Youth (0-19)', 'Seniors (65+)'],
+                    datasets: [{
+                        label: 'Population Distribution',
+                        data: [902823, 372822, 326000],
+                        backgroundColor: ['#0284c7', '#7dd3fc', '#bae6fd'],
+                        borderColor: '#f8fafc',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    ...chartStyles,
+                    plugins: {
+                        ...chartStyles.plugins,
+                        title: {
+                            display: true,
+                            text: 'Lancashire Population Structure',
+                            color: '#334155',
+                            font: { size: 16 }
+                        }
+                    }
+                }
+            });
+
+            // Chart 2: Skills Chasm
+            const skillsChasmCtx = document.getElementById('skillsChasmChart').getContext('2d');
+            new Chart(skillsChasmCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Manufacturing', 'Health/Social Work', 'Retail', 'Professional Occ.'],
+                    datasets: [
+                        {
+                            label: 'Lancashire Workforce %',
+                            data: [12.9, 15.7, 11.2, 19.5],
+                            backgroundColor: '#0284c7',
+                            borderColor: '#0369a1',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'England/GB Average %',
+                            data: [7.4, null, null, 23.4],
+                            backgroundColor: '#a5f3fc',
+                            borderColor: '#67e8f9',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    ...chartStyles,
+                    plugins: {
+                        ...chartStyles.plugins,
+                        title: {
+                            display: true,
+                            text: 'Employment by Sector vs. National Average',
+                            color: '#334155',
+                            font: { size: 16 }
+                        },
+                        tooltip: {
+                           callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Chart 3: UBI Cost
+            const ubiData = {
+                'a': {
+                    labels: ['Gross Cost', 'Savings', 'Tax Revenue', 'Net Cost'],
+                    data: [4.68, -0.9, -2.2, 1.58],
+                    description: 'A modest, foundational payment of £60/week per adult. Net cost is estimated at £1.58 billion annually (4.0% of Lancashire GVA).'
+                },
+                'b': {
+                    labels: ['Gross Cost', 'Savings', 'Tax Revenue', 'Net Cost'],
+                    data: [24.47, -2.8, -18.5, 3.17],
+                    description: 'A full payment benchmarked to the poverty line, replacing most benefits. Net cost is estimated at £3.17 billion annually (8.0% of GVA).'
+                },
+                'c': {
+                    labels: ['Gross Cost', 'Savings', 'Tax Revenue', 'Net Cost'],
+                    data: [24.47, -1.7, -18.5, 4.27],
+                    description: 'A full payment while also retaining existing benefits for additional needs. Net cost is highest at £4.27 billion annually (10.8% of GVA).'
+                }
+            };
+            const ubiCtx = document.getElementById('ubiCostChart').getContext('2d');
+            const ubiCostChart = new Chart(ubiCtx, {
+                type: 'bar',
+                data: {
+                    labels: ubiData.a.labels,
+                    datasets: [{
+                        label: 'Cost in Billions (£)',
+                        data: ubiData.a.data,
+                        backgroundColor: (context) => {
+                            const value = context.dataset.data[context.dataIndex];
+                            if (value < 0) return '#7dd3fc'; // light sky
+                            if (context.label === 'Net Cost') return '#ef4444'; // red
+                            return '#0284c7'; // sky
+                        },
+                    }]
+                },
+                options: {
+                    ...chartStyles,
+                    indexAxis: 'y',
+                    plugins: {
+                        ...chartStyles.plugins,
+                        title: {
+                            display: true,
+                            text: 'Net Annual Cost of UBI (Billions £)',
+                            color: '#334155',
+                            font: { size: 16 }
+                        },
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            const ubiDescriptionEl = document.getElementById('ubi-description').querySelector('p');
+            const ubiButtons = {
+                a: document.getElementById('ubi-a-btn'),
+                b: document.getElementById('ubi-b-btn'),
+                c: document.getElementById('ubi-c-btn')
+            };
+
+            function updateUbiChart(scenario) {
+                const { labels, data, description } = ubiData[scenario];
+                ubiCostChart.data.labels = labels;
+                ubiCostChart.data.datasets[0].data = data;
+                ubiCostChart.update();
+                ubiDescriptionEl.textContent = description;
+                
+                Object.values(ubiButtons).forEach(btn => btn.classList.remove('active'));
+                ubiButtons[scenario].classList.add('active');
+            }
+
+            ubiButtons.a.addEventListener('click', () => updateUbiChart('a'));
+            ubiButtons.b.addEventListener('click', () => updateUbiChart('b'));
+            ubiButtons.c.addEventListener('click', () => updateUbiChart('c'));
+            updateUbiChart('a'); // Initial state
+
+            // Chart 4: Retraining ROI
+            const retrainingCtx = document.getElementById('retrainingRoiChart').getContext('2d');
+            new Chart(retrainingCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'],
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: 'Cumulative ROI (£m)',
+                            data: [1.5, 4.5, 9.0, 13.5, 18.0],
+                            borderColor: '#16a34a', // green-600
+                            backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                            fill: true,
+                            tension: 0.1,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Annual Public Cost (£m)',
+                            data: [11.25, 22.5, 33.75, 33.75, 33.75],
+                            backgroundColor: '#f97316', // orange-500
+                            yAxisID: 'y'
+                        },
+                    ]
+                },
+                options: {
+                    ...chartStyles,
+                    scales: {
+                        ...chartStyles.scales,
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: { display: true, text: 'Annual Cost (£m)', color: '#475569' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            grid: { drawOnChartArea: false },
+                            title: { display: true, text: 'Cumulative ROI (£m)', color: '#475569' }
+                        }
+                    },
+                    plugins: {
+                        ...chartStyles.plugins,
+                        title: {
+                            display: true,
+                            text: 'Retraining Program: Cost vs. Return',
+                            color: '#334155',
+                            font: { size: 16 }
+                        }
+                    }
+                }
+            });
+
+            // Smooth scrolling for nav links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            // Gemini API Integration
+            const generateBtn = document.getElementById('generate-briefing-btn');
+            const policySelect = document.getElementById('policy-select');
+            const audienceSelect = document.getElementById('audience-select');
+            const outputContainer = document.getElementById('briefing-output-container');
+            const loader = document.getElementById('gemini-loader');
+            const briefingTextEl = document.getElementById('briefing-text');
+            const copyBtn = document.getElementById('copy-briefing-btn');
+
+            generateBtn.addEventListener('click', async () => {
+                const policy = policySelect.value;
+                const audience = audienceSelect.value;
+                
+                outputContainer.style.display = 'block';
+                loader.style.display = 'block';
+                briefingTextEl.textContent = '';
+                copyBtn.textContent = 'Copy Text';
+
+                const prompt = createPrompt(policy, audience);
+                
+                try {
+                    const generatedText = await callGemini(prompt);
+                    briefingTextEl.textContent = generatedText;
+                } catch (error) {
+                    briefingTextEl.textContent = 'An error occurred while generating the briefing. Please try again.';
+                } finally {
+                    loader.style.display = 'none';
+                }
+            });
+
+            copyBtn.addEventListener('click', () => {
+                const textToCopy = briefingTextEl.textContent;
+                const tempTextArea = document.createElement('textarea');
+                tempTextArea.value = textToCopy;
+                document.body.appendChild(tempTextArea);
+                tempTextArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempTextArea);
+                copyBtn.textContent = 'Copied!';
+            });
+
+            function createPrompt(policy, audience) {
+                const context = `
+                    **Report Context: The Future of Work in Lancashire**
+                    - **Challenge:** Lancashire faces an aging population (1.9% annual growth in 65+), a skills mismatch (39.6% degree-qualified vs 47.2% GB average), and a legacy in manufacturing (12.9% of workforce vs 7.4% England average), which is vulnerable to automation.
+                    - **Solution 1: Universal Basic Income (UBI):** Provides a universal safety net. A full UBI has a high net annual cost of £3.17bn but offers significant, direct poverty reduction and health benefits.
+                    - **Solution 2: AI-Powered Retraining:** A targeted program to upskill at-risk workers for growth sectors (cyber, clean energy). It has a low net annual cost of £37.5m and a strong, direct alignment with economic growth, with a projected positive ROI.
+                    - **Recommended Solution: Hybrid 'Skills and Security' Model:** A phased approach combining a modest, transitional UBI for security with the full-scale AI-Retraining program for skills. This creates a virtuous cycle where the safety net enables workers to undertake training.
+                `;
+
+                return `
+                    ${context}
+                    **Task:**
+                    You are a policy advisor for the Lancashire Future Works Initiative. Write a concise and persuasive briefing note (around 200-250 words) for the following audience: **${audience}**.
+                    The briefing should focus on the **${policy}**.
+                    
+                    **Instructions for your response:**
+                    - Adopt a professional, clear, and direct tone.
+                    - Start with a clear subject line.
+                    - Structure the note with a brief introduction, key points (use bullet points), and a concluding sentence about next steps or the overall vision.
+                    - Tailor the benefits, concerns, and language specifically to the chosen audience. For example, for business owners, focus on workforce stability and skills supply. For workers, focus on job security and opportunity. For community leaders, focus on social cohesion and regional prosperity.
+                    - Do not invent new data. Base your arguments on the provided context.
+                `;
+            }
+
+            async function callGemini(prompt) {
+                let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiKey = ""; 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                let response;
+                let retries = 3;
+                let delay = 1000;
+
+                for (let i = 0; i < retries; i++) {
+                    try {
+                        response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (response.ok) {
+                            const result = await response.json();
+                            if (result.candidates && result.candidates.length > 0 &&
+                                result.candidates[0].content && result.candidates[0].content.parts &&
+                                result.candidates[0].content.parts.length > 0) {
+                                return result.candidates[0].content.parts[0].text;
+                            } else {
+                                throw new Error("Invalid response structure from API.");
+                            }
+                        } else if (response.status === 429 || response.status >= 500) {
+                            // Throttling or server error, retry
+                            await new Promise(res => setTimeout(res, delay));
+                            delay *= 2; // Exponential backoff
+                        } else {
+                            // Other client-side error, don't retry
+                            const errorResult = await response.json();
+                            throw new Error(errorResult.error.message || 'API request failed');
+                        }
+                    } catch (error) {
+                        if (i === retries - 1) throw error;
+                    }
+                }
+                throw new Error("API request failed after multiple retries.");
+            }
+        });
+    </script>
+</body>
+</html>
