@@ -1,0 +1,657 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The AI Tutor: A Teacher's Guide</title>
+    <style>
+        :root {
+            --primary-color: #005A9C;
+            --secondary-color: #003366;
+            --accent-color: #FDB813;
+            --background-color: #f8f9fa;
+            --text-color: #333;
+            --card-bg: #ffffff;
+            --card-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1.5rem 2rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        header p {
+            margin: 0.5rem 0 0;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        nav {
+            background-color: var(--secondary-color);
+            padding: 0.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 0.8rem 1.2rem;
+            display: block;
+            transition: background-color 0.3s;
+            font-weight: 500;
+        }
+        nav ul li a:hover, nav ul li a.active {
+            background-color: var(--primary-color);
+            border-radius: 5px;
+        }
+        main {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        section {
+            background-color: var(--card-bg);
+            margin-bottom: 2rem;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            scroll-margin-top: 80px; /* Offset for sticky nav */
+        }
+        h2 {
+            color: var(--secondary-color);
+            border-bottom: 3px solid var(--accent-color);
+            padding-bottom: 0.5rem;
+            margin-top: 0;
+        }
+       .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+       .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+            padding: 1.5rem;
+            border-left: 5px solid var(--primary-color);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+       .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+        }
+       .card h3 {
+            margin-top: 0;
+            color: var(--secondary-color);
+        }
+       .card.pitfall {
+            border-left-color: #d9534f;
+        }
+       .card.pitfall h3 {
+            color: #a94442;
+        }
+       .card.promise {
+            border-left-color: #5cb85c;
+        }
+       .card.promise h3 {
+            color: #3c763d;
+        }
+       .card.checklist {
+            border-left-color: #f0ad4e;
+        }
+       .card.checklist h3 {
+            color: #8a6d3b;
+        }
+       .card ul {
+            padding-left: 20px;
+        }
+       .card li {
+            margin-bottom: 0.5rem;
+        }
+       .tool-card {
+            text-align: center;
+        }
+       .tool-card .tool-logo {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+       .tool-card h4 {
+            margin-bottom: 0.5rem;
+        }
+       .tool-card p {
+            font-size: 0.9rem;
+        }
+       .cta-button {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: var(--secondary-color);
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s, box-shadow 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+       .cta-button:hover {
+            background-color: #e6a800;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+       }
+        footer {
+            background-color: var(--secondary-color);
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        /* Accordion styles */
+       .accordion-item {
+            border-bottom: 1px solid #ddd;
+        }
+       .accordion-button {
+            width: 100%;
+            background-color: #f1f1f1;
+            border: none;
+            text-align: left;
+            padding: 15px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            color: var(--secondary-color);
+            font-weight: 600;
+        }
+       .accordion-button:hover {
+            background-color: #ddd;
+        }
+       .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            padding: 0 15px;
+            background-color: white;
+        }
+       .accordion-content div {
+            padding: 15px 0;
+        }
+        /* Gemini Tool Styles */
+        .gemini-tool {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        .gemini-tool h3 {
+            color: var(--secondary-color);
+            margin-top: 0;
+        }
+        .gemini-tool .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .gemini-tool label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        .gemini-tool input, .gemini-tool select, .gemini-tool textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .gemini-tool textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        .gemini-tool .result-box {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            min-height: 50px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            overflow-x: auto;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid var(--primary-color);
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 1rem auto;
+            display: none; /* Hidden by default */
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            nav ul {
+                flex-direction: column;
+                align-items: center;
+            }
+            header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>The AI Co-Pilot</h1>
+        <p>An Interactive Guide for UK Teachers on Using AI Equitably and Effectively</p>
+    </header>
+
+    <nav id="navbar">
+        <ul>
+            <li><a href="#promise">The Promise</a></li>
+            <li><a href="#past-lessons">Lessons from the Past</a></li>
+            <li><a href="#risks">Navigating Risks</a></li>
+            <li><a href="#q-and-a">Q&A (2025)</a></li>
+            <li><a href="#getting-started">Getting Started</a></li>
+            <li><a href="#big-picture">The Big Picture</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <!-- Sections: The Promise, Lessons from the Past, Navigating Risks, Q&A (2025) remain the same -->
+        <section id="promise">
+            <h2>Why AI? The Promise & The Reality</h2>
+            <p>Artificial Intelligence is more than just a buzzword; it's a powerful new assistant arriving in our classrooms. The UK government is backing its potential to modernise education and, most importantly, to support teachers.[1] Let's look at what AI promises to deliver.</p>
+            <div class="card-container">
+                <div class="card promise">
+                    <h3>Your New Teaching Assistant</h3>
+                    <p>The primary goal of AI in UK schools is to tackle the workload crisis.[1, 2] AI can streamline time-consuming administrative tasks, freeing you to focus on what matters most: teaching.</p>
+                    <ul>
+                        <li><strong>Lesson Planning:</strong> Generate ideas, starter activities, or entire lesson structures.[1] The government is funding Oak National Academy to develop AI lesson-planning assistants for every teacher in England.[1]</li>
+                        <li><strong>Resource Creation:</strong> Quickly create differentiated worksheets, quizzes, and presentations.</li>
+                        <li><strong>Parent Communications:</strong> Draft emails, newsletters, and reports.</li>
+                    </ul>
+                </div>
+                <div class="card promise">
+                    <h3>Personalised Learning at Scale</h3>
+                    <p>AI Tutors offer a solution to one of education's biggest challenges: differentiating for a classroom of 30+ students.[3, 4] These systems can create adaptive learning paths for each child.</p>
+                    <ul>
+                        <li><strong>Real-time Adaptation:</strong> AI adjusts the difficulty of questions based on a student's live performance.[4]</li>
+                        <li><strong>Instant Feedback:</strong> Students get immediate, targeted feedback, helping to correct misconceptions on the spot.</li>
+                        <li><strong>Mastery Learning:</strong> Ensures students grasp a concept before moving on, preventing knowledge gaps from forming.[5]</li>
+                    </ul>
+                </div>
+                <div class="card promise">
+                    <h3>Early Evidence: Does it Work?</h3>
+                    <p>While it's still early days, initial trials are promising. The focus isn't just on theory; it's on measurable impact.</p>
+                    <ul>
+                        <li>A trial by the Education Endowment Foundation (EEF) found that teachers using ChatGPT for lesson preparation saw a significant reduction in the time they felt they spent on planning.[6]</li>
+                        <li>Early adopter schools report that AI is a crucial tool for increasing efficiency and personalising resources for pupils with diverse needs, like EAL or SEND.[7]</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="past-lessons">
+            <h2>Ghosts of EdTech Past: Learning So We Don't Repeat History</h2>
+            <p>The UK's educational landscape is littered with expensive tech initiatives that over-promised and under-delivered. Understanding these past failures is crucial to making sure AI is different.[8]</p>
+            <div class="accordion">
+                <div class="accordion-item">
+                    <button class="accordion-button">The Becta Legacy (1998-2011): The Peril of a Top-Down Approach</button>
+                    <div class="accordion-content">
+                        <div>
+                            <p>The British Educational Communications and Technology Agency (Becta) was the government body driving e-learning strategy. It became an expert on procurement and technical standards but failed to focus on the most important part: pedagogy.[9, 10]</p>
+                            <p><strong>The Pitfall:</strong> Becta prioritised the 'what' (the hardware, the software) over the 'why' and 'how' (the teaching practice). It created technology-rich classrooms that were often practice-poor.[8]</p>
+                            <p><strong>The Lesson for AI:</strong> Governance must be pedagogy-led, not technology-led. The first question should always be "Does this improve learning for all children?" not "What's the best AI to buy?".</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <button class="accordion-button">The Hardware Fallacy: 'One Laptop Per Child' & COVID-Era Deployments</button>
+                    <div class="accordion-content">
+                        <div>
+                            <p>Initiatives like 'One Laptop Per Child' and the mass device rollout during COVID-19 were based on the flawed idea that giving a child a device solves the digital divide.[11, 12]</p>
+                            <p><strong>The Pitfall:</strong> These programmes ignored the complex ecosystem needed for learning: reliable internet, a quiet space to work, and parental/teacher digital literacy. Research on 'One Laptop Per Child' found no positive impact on academic achievement.[12] During COVID, many disadvantaged pupils still struggled even after receiving a device.[13]</p>
+                            <p><strong>The Lesson for AI:</strong> Access is more than a device. An equitable AI strategy must guarantee the full ecosystem: the device, the connectivity, and the support at home and school.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <button class="accordion-button">The Interactive Whiteboard Experiment: A Lesson in Slow Adoption</button>
+                    <div class="accordion-content">
+                        <div>
+                            <p>Interactive Whiteboards (IWBs) became almost universal in UK schools. However, their impact on learning was neither transformative nor immediate.[14, 15]</p>
+                            <p><strong>The Pitfall:</strong> For the first two years, most teachers used IWBs as glorified projectors, supporting existing teaching methods rather than changing them. Measurable attainment gains only appeared after a significant time lag of about two years, once teachers had adapted their pedagogy to truly leverage the technology's interactive features.[14, 16]</p>
+                            <p><strong>The Lesson for AI:</strong> Impact is not in the tool; it's in the teaching. We cannot expect immediate results from AI. Success depends entirely on sustained, high-quality professional development focused on pedagogical change, not just technical skills.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="risks">
+            <h2>Navigating the Risks: A Teacher's Checklist</h2>
+            <p>AI is a powerful tool, but it comes with significant risks. As a teacher, you are the most important line of defence in ensuring it's used safely and fairly. Here's what to look out for.</p>
+            <div class="card-container">
+                <div class="card checklist">
+                    <h3>Is it Fair? Spotting Algorithmic Bias</h3>
+                    <p>Remember the 2020 A-level grading fiasco? An algorithm systematically downgraded high-achieving students from disadvantaged backgrounds because it was trained on biased historical data.[17, 18] AI Tutors can do the same thing on a smaller, daily scale.</p>
+                    <strong>Ask yourself:</strong>
+                    <ul>
+                        <li>Could this tool reinforce stereotypes? For example, by offering different problems to boys and girls? [19]</li>
+                        <li>How might it perform with my EAL students or those with different cultural backgrounds? Studies show some AI tools are biased against non-native English speakers.[20]</li>
+                        <li>Has this tool been independently audited for bias?</li>
+                    </ul>
+                </div>
+                <div class="card checklist">
+                    <h3>Is it Safe? Protecting Student Data</h3>
+                    <p>AI Tutors are data-gathering machines. UK law (UK GDPR and the Data Protection Act) places strict rules on how children's data can be used.[21, 22] Your school is responsible for compliance.</p>
+                    <strong>Your non-negotiables:</strong>
+                    <ul>
+                        <li><strong>Never</strong> input personally identifiable student information into public AI tools like ChatGPT.[23]</li>
+                        <li>Only use school-approved AI platforms that have been vetted for data security.</li>
+                        <li>Ensure your school has a clear policy and has obtained parental consent for any data being used by AI tools.[24, 25]</li>
+                    </ul>
+                </div>
+                <div class="card checklist">
+                    <h3>Am I Still the Teacher? The Human Element</h3>
+                    <p>The biggest fear is that AI will de-skill students or dehumanise learning. Your role is to ensure that doesn't happen. The government and teaching unions are clear: AI is a tool to support teachers, not replace them.[1, 26]</p>
+                    <strong>Remember the mantra: "Automate the routine, not the relationship".[26]</strong>
+                    <ul>
+                        <li>Encourage "productive struggle." Don't let students rely on AI for instant answers. It can hinder the development of resilience and critical thinking.[27, 28]</li>
+                        <li>Your role will shift to focus more on what AI can't do: mentoring, facilitating collaboration, providing pastoral care, and inspiring curiosity.[29]</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        
+        <section id="q-and-a">
+            <h2>Your Questions Answered: Latest Developments (2025)</h2>
+            <p>The world of AI in education is moving incredibly fast. Here are answers to some key questions based on the latest research and policy updates from 2025.</p>
+            <div class="accordion">
+                <div class="accordion-item">
+                    <button class="accordion-button">Has the government released any official guidance on using AI?</button>
+                    <div class="accordion-content">
+                        <div>
+                            <p><strong>Yes, finally.</strong> In June 2025, the Department for Education (DfE) launched its first official guidance for schools and colleges. The key message is to embrace AI to reduce workload, but to do so safely and ethically.</p>
+                            <p>The guidance, developed with experts, clarifies that teachers remain responsible for all AI-generated content and must verify its accuracy and protect student data. The government is also funding new training materials and 'test bed' schools to build an evidence base for what works.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <button class="accordion-button">I'm worried AI will benefit richer schools more. Is there evidence of this?</button>
+                    <div class="accordion-content">
+                        <div>
+                            <p><strong>Yes, your concern is valid and now proven by data.</strong> A landmark report from The Sutton Trust in July 2025, titled <em>"Artificial Advantage?"</em>, confirmed a rapidly growing "AI digital divide."</p>
+                            <p>The research found that teachers in private schools are more than twice as likely to have received formal AI training than their state school counterparts (45% vs 21%). Private schools are also three times more likely to have a formal AI strategy. This is leading to a significant gap where affluent schools are harnessing AI to save time and innovate, while under-resourced schools are being left behind.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <button class="accordion-button">Are teachers and students actually using AI now?</button>
+                    <div class="accordion-content">
+                        <div>
+                            <p><strong>Absolutely. Adoption has surged in the last year.</strong> Surveys from 2025 show around 60% of UK teachers now use AI for work, a huge jump from previous years. The main uses are for time-saving tasks like lesson planning, resource creation, and admin.</p>
+                            <p>Student use is even higher, with over 90% now using AI in some form to support their studies. They use it for explaining concepts, summarising articles, and getting research ideas. However, they are increasingly worried about how AI will affect their future job prospects and the fairness of access to powerful tools.</p>
+                        </div>
+                    </div>
+                </div>
+                 <div class="accordion-item">
+                    <button class="accordion-button">What are the biggest barriers holding teachers back?</button>
+                    <div class="accordion-content">
+                        <div>
+                            <p><strong>Lack of training and clear rules.</strong> A 2025 survey by Twinkl revealed that while teachers are optimistic about AI, the vast majority (76%) have received no formal training or guidance from their schools. Many teachers feel they lack confidence and are concerned about the absence of clear regulations for using AI safely and effectively.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="getting-started">
+            <h2>Getting Started: Practical Steps & Interactive Tools</h2>
+            <p>Ready to explore AI? The key is to start small and build confidence. This section provides both a simple guide and live, AI-powered tools to help you begin your journey.</p>
+            
+            <!-- Gemini Tool 1: Lesson Planner -->
+            <div class="gemini-tool">
+                <h3>✨ AI Lesson Planner</h3>
+                <p>Use this tool to generate ideas for your lessons. Fill in the fields below and let the AI assistant help with your planning.</p>
+                <div class="form-grid">
+                    <div>
+                        <label for="topic">Topic</label>
+                        <input type="text" id="topic" placeholder="e.g., Coastal Erosion">
+                    </div>
+                    <div>
+                        <label for="year-group">Year Group</label>
+                        <input type="text" id="year-group" placeholder="e.g., Year 9">
+                    </div>
+                    <div>
+                        <label for="subject">Subject</label>
+                        <input type="text" id="subject" placeholder="e.g., Geography">
+                    </div>
+                    <div>
+                        <label for="task-type">Task</label>
+                        <select id="task-type">
+                            <option value="starter">5 Starter Questions</option>
+                            <option value="outline">Lesson Outline</option>
+                            <option value="quiz">10 Quiz Questions</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="generate-lesson-btn" class="cta-button">Generate Ideas</button>
+                <div id="lesson-loader" class="loader"></div>
+                <div id="lesson-result" class="result-box">Your generated lesson ideas will appear here...</div>
+            </div>
+
+            <!-- Gemini Tool 2: Differentiation Assistant -->
+            <div class="gemini-tool">
+                <h3>✨ AI Differentiation Assistant</h3>
+                <p>Paste a piece of text and ask the AI to adapt it for different learning needs.</p>
+                <div>
+                    <label for="original-text">Original Text</label>
+                    <textarea id="original-text" placeholder="Paste your text here..."></textarea>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <label for="diff-instruction">Differentiation Instruction</label>
+                    <input type="text" id="diff-instruction" placeholder="e.g., Simplify for a 9-year-old reading age">
+                </div>
+                <button id="differentiate-btn" class="cta-button" style="margin-top: 1rem;">Differentiate Text</button>
+                <div id="diff-loader" class="loader"></div>
+                <div id="diff-result" class="result-box">Your differentiated text will appear here...</div>
+            </div>
+
+        </section>
+
+        <section id="big-picture">
+            <h2>The Big Picture: Forging an Equitable Future</h2>
+            <p>For AI to truly succeed, individual classroom practice needs to be supported by a national strategy focused on fairness and quality. Here are the key ideas shaping that future.</p>
+            <div class="card-container">
+                <div class="card">
+                    <h3>Countering the New Digital Divide</h3>
+                    <p>Sutton Trust research shows a stark "AI digital divide" is already forming, with private and affluent state schools adopting AI much faster.[39, 40] To counter this, a <strong>"Digital Access Guarantee"</strong> is proposed, ensuring every disadvantaged pupil gets not just a device, but also the reliable home internet connection needed to use it.[40]</p>
+                </div>
+                <div class="card">
+                    <h3>Ensuring Quality with an "EdTech Kitemark"</h3>
+                    <p>How can schools separate effective tools from "gimmicks"? [41] The proposed solution is an independent body that would award a quality mark, or "kitemark," to AI products that have undergone rigorous, independent evaluation and proven they have a positive impact on learning.[42]</p>
+                </div>
+                <div class="card">
+                    <h3>Global Guidance: The UNESCO Framework</h3>
+                    <p>UNESCO has developed an AI Competency Framework for teachers, providing a global vision for how to integrate AI effectively and ethically.[43, 44] It's built on a human-centred approach, prioritising values like inclusivity, human agency, and ethics to ensure AI serves education, not the other way around.[45]</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>&copy; 2025 The AI Co-Pilot Guide. Built to empower UK teachers in the age of AI.</p>
+    </footer>
+
+    <script>
+        // --- Accordion functionality ---
+        const accordionBtns = document.querySelectorAll(".accordion-button");
+        accordionBtns.forEach(button => {
+            button.addEventListener("click", function() {
+                this.classList.toggle("active");
+                const content = this.nextElementSibling;
+                if (content.style.maxHeight) {
+                    content.style.maxHeight = null;
+                } else {
+                    content.style.maxHeight = content.scrollHeight + "px";
+                }
+            });
+        });
+
+        // --- Active navigation link scrolling ---
+        const sections = document.querySelectorAll('section');
+        const navLi = document.querySelectorAll('nav ul li a');
+
+        window.addEventListener('scroll', ()=> {
+            let current = '';
+            sections.forEach( section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= (sectionTop - 85)) { // Adjusted offset
+                    current = section.getAttribute('id');
+                }
+            })
+
+            navLi.forEach( a => {
+                a.classList.remove('active');
+                if (a.getAttribute('href') == '#' + current) {
+                    a.classList.add('active');
+                }
+            })
+        });
+
+        // --- Gemini API Integration ---
+        const lessonButton = document.getElementById('generate-lesson-btn');
+        const diffButton = document.getElementById('differentiate-btn');
+        const lessonLoader = document.getElementById('lesson-loader');
+        const diffLoader = document.getElementById('diff-loader');
+        const lessonResultBox = document.getElementById('lesson-result');
+        const diffResultBox = document.getElementById('diff-result');
+
+        const apiKey = "AIzaSyCYkqbpqOxDGUKrUddBLnUqPLlANcvJEto"; // API key is handled by the environment
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+        // Function to call Gemini API with exponential backoff
+        async function callGeminiAPI(prompt, maxRetries = 5) {
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+            const payload = { contents: chatHistory };
+            
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        return result.candidates[0].content.parts[0].text;
+                    } else {
+                        // Handle cases where the response structure is unexpected
+                        throw new Error("Invalid response structure from API.");
+                    }
+                } catch (error) {
+                    if (i === maxRetries - 1) {
+                        // Last retry failed
+                        console.error("API call failed after multiple retries:", error);
+                        return `Error: Could not get a response from the AI. Please try again. Details: ${error.message}`;
+                    }
+                    // Wait before retrying
+                    const delay = Math.pow(2, i) * 1000;
+                    await new Promise(res => setTimeout(res, delay));
+                }
+            }
+        }
+
+
+        // Event Listener for Lesson Planner
+        lessonButton.addEventListener('click', async () => {
+            const topic = document.getElementById('topic').value;
+            const yearGroup = document.getElementById('year-group').value;
+            const subject = document.getElementById('subject').value;
+            const taskType = document.getElementById('task-type').value;
+
+            if (!topic || !yearGroup || !subject) {
+                lessonResultBox.textContent = "Please fill in all fields (Topic, Year Group, Subject).";
+                return;
+            }
+
+            let prompt = "";
+            switch (taskType) {
+                case 'starter':
+                    prompt = `As an expert UK teacher, generate 5 engaging starter questions for a ${yearGroup} ${subject} lesson on the topic of '${topic}'. The questions should be suitable for a mixed-ability class in a UK school.`;
+                    break;
+                case 'outline':
+                    prompt = `As an expert UK teacher, create a clear lesson outline for a 60-minute ${yearGroup} ${subject} lesson on '${topic}'. Include learning objectives, a starter, main activities (with differentiation suggestions), and a plenary. Ensure it aligns with a typical UK curriculum.`;
+                    break;
+                case 'quiz':
+                    prompt = `As an expert UK teacher, create a 10-question multiple-choice quiz for a ${yearGroup} ${subject} class on the topic of '${topic}'. Provide the correct answer for each question. The questions should be clear and assess key knowledge.`;
+                    break;
+            }
+
+            lessonLoader.style.display = 'block';
+            lessonResultBox.textContent = '';
+            const result = await callGeminiAPI(prompt);
+            lessonLoader.style.display = 'none';
+            lessonResultBox.textContent = result;
+        });
+
+        // Event Listener for Differentiation Assistant
+        diffButton.addEventListener('click', async () => {
+            const originalText = document.getElementById('original-text').value;
+            const instruction = document.getElementById('diff-instruction').value;
+
+            if (!originalText || !instruction) {
+                diffResultBox.textContent = "Please provide both the original text and a differentiation instruction.";
+                return;
+            }
+
+            const prompt = `Adapt the following text based on this instruction: "${instruction}".\n\nOriginal Text:\n---\n${originalText}\n---\n\nAdapted Text:`;
+
+            diffLoader.style.display = 'block';
+            diffResultBox.textContent = '';
+            const result = await callGeminiAPI(prompt);
+            diffLoader.style.display = 'none';
+            diffResultBox.textContent = result;
+        });
+
+    </script>
+
+</body>
+</html>
