@@ -1,0 +1,460 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { initializeApp } from 'firebase/app';
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInAnonymously,
+  signInWithCustomToken
+} from 'firebase/auth';
+import {
+  getFirestore,
+  collection,
+  doc,
+  addDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  setLogLevel
+} from 'firebase/firestore';
+
+// --- Firebase Configuration ---
+// These variables are provided by the environment.
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const firebaseConfig = typeof __firebase_config !== 'undefined'
+  ? JSON.parse(__firebase_config)
+  : { apiKey: "DEFAULT_API_KEY", authDomain: "DEFAULT_AUTH_DOMAIN", projectId: "DEFAULT_PROJECT_ID" };
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+// --- TMDB API Configuration ---
+// Get your free API key from https://www.themoviedb.org/
+const TMDB_API_KEY = 'YOUR_TMDB_API_KEY_HERE'; // <-- PASTE YOUR V3 API KEY HERE
+
+// --- Main Application Component ---
+export default function App() {
+  // Firebase state
+  const [auth, setAuth] = useState(null);
+  const [db, setDb] = useState(null);
+  const [userId, setUserId] = useState(null);
+  
+  // App state
+  const [shows, setShows] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Form state
+  const [title, setTitle] = useState('');
+  const [airDate, setAirDate] = useState('');
+  const [airTime, setAirTime] = useState('');
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Effect for Firebase Initialization and Authentication
+  useEffect(() => {
+    // Initialize Firebase
+    try {
+      const app = initializeApp(firebaseConfig);
+      const authInstance = getAuth(app);
+      const dbInstance = getFirestore(app);
+      
+      setAuth(authInstance);
+      setDb(dbInstance);
+      setLogLevel('Debug'); // Enable Firestore logging
+
+      // --- Authentication ---
+      const unsubscribe = onAuthStateChanged(authInstance, async (user) => {
+        if (user) {
+          // User is signed in
+          setUserId(user.uid);
+        } else {
+          // User is signed out, attempt to sign in
+          setUserId(null);
+          try {
+            if (initialAuthToken) {
+              // Use custom token if available
+              await signInWithCustomToken(authInstance, initialAuthToken);
+            } else {
+              // Fallback to anonymous sign-in
+              await signInAnonymously(authInstance);
+            }
+          } catch (authError) {
+            console.error("Error signing in:", authError);
+            setError("Could not authenticate. Please refresh.");
+          }
+        }
+      });
+      
+      return () => unsubscribe(); // Cleanup auth listener on unmount
+    } catch (e) {
+      console.error("Error initializing Firebase:", e);
+      setError("Failed to initialize app. Please check console.");
+    }
+  }, []);
+
+  // Effect for Fetching Data from Firestore
+  useEffect(() => {
+    // Wait until we have a user ID and DB connection
+    if (!userId || !db) {
+      // Don't fetch data yet
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    // Path to the user's private collection of shows
+    const collectionPath = `artifacts/${appId}/users/${userId}/shows`;
+    const showsCollection = collection(db, collectionPath);
+    
+    // Create a query.
+    // We fetch all items and sort them in-memory to avoid needing a Firestore index.
+    const q = query(showsCollection);
+
+    // Set up the real-time listener
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const showsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      // Sort the shows in JavaScript (in-memory)
+      const sortedShows = showsData.sort((a, b) => {
+        // Create full ISO strings for comparison. Default to midnight if no time.
+        const dateTimeA = new Date(`${a.airDate}T${a.airTime || '00:00'}`);
+        const dateTimeB = new Date(`${b.airDate}T${b.airTime || '00:00'}`);
+        return dateTimeA - dateTimeB; // Sorts from soonest to latest
+      });
+      
+      setShows(sortedShows);
+      setIsLoading(false);
+    }, (err) => {
+      console.error("Error fetching shows:", err);
+      setError("Failed to fetch shows.");
+      setIsLoading(false);
+    });
+
+    // Cleanup listener on unmount or when userId/db changes
+    return () => unsubscribe();
+    
+  }, [userId, db]); // Re-run this effect if userId or db instance changes
+
+  // --- Event Handlers ---
+
+  /**
+   * Handles adding a new show to Firestore.
+   */
+  const handleAddShow = async (e) => {
+    e.preventDefault();
+    if (!title || !airDate) {
+      setError("Please fill in at least the show title and air date.");
+      return;
+    }
+    if (!db || !userId) {
+      setError("Database not ready. Please wait.");
+      return;
+    }
+    
+    setError(null); // Clear previous errors
+
+    try {
+      const collectionPath = `artifacts/${appId}/users/${userId}/shows`;
+      await addDoc(collection(db, collectionPath), {
+        title,
+        airDate,
+        airTime
+      });
+      
+      // Clear the form
+      setTitle('');
+      setAirDate('');
+      setAirTime('');
+    } catch (err) {
+      console.error("Error adding document: ", err);
+      setError("Failed to add show.");
+    }
+  };
+
+  /**
+   * Handles deleting a show from Firestore.
+   */
+  const handleDeleteShow = async (showId) => {
+    if (!db || !userId) {
+      setError("Database not ready. Please wait.");
+      return;
+    }
+    
+    try {
+      const docPath = `artifacts/${appId}/users/${userId}/shows/${showId}`;
+      await deleteDoc(doc(db, docPath));
+    } catch (err) {
+      console.error("Error deleting document: ", err);
+      setError("Failed to delete show.");
+    }
+  };
+
+  /**
+   * Handles searching the TMDB API for shows.
+   */
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery) {
+      setError("Please enter a search term.");
+      return;
+    }
+    if (TMDB_API_KEY === 'YOUR_TMDB_API_KEY_HERE' || !TMDB_API_KEY) {
+      setError("Please add your TMDB API key to the code (line 22) to enable search.");
+      return;
+    }
+
+    setIsSearching(true);
+    setError(null);
+    setSearchResults([]);
+
+    try {
+      const response = await fetch(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(searchQuery)}`);
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.statusText}`);
+      }
+      const data = await response.json();
+      setSearchResults(data.results.slice(0, 10)); // Show top 10 results
+    } catch (err) {
+      console.error("Error searching TMDB:", err);
+      setError("Failed to search for shows. Check console.");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  /**
+   * Handles selecting a show from search results to pre-fill the form.
+   */
+  const handleSelectShow = (show) => {
+    setTitle(show.name);
+    // Use first_air_date as a fallback. User will likely need to update this.
+    setAirDate(show.first_air_date || ''); 
+    setAirTime(''); // Clear time
+    setSearchQuery(''); // Clear search input
+    setSearchResults([]); // Hide results
+  };
+
+  // --- Helper to format date/time for display ---
+  const formatShowDateTime = (dateStr, timeStr) => {
+    try {
+      const isoString = `${dateStr}T${timeStr || '00:00'}`;
+      const date = new Date(isoString);
+      
+      // Check for invalid date
+      if (isNaN(date.getTime())) {
+        return "Invalid date";
+      }
+
+      return date.toLocaleString(undefined, {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: timeStr ? '2-digit' : undefined, // Only show hour/minute if time was provided
+        minute: timeStr ? '2-digit' : undefined,
+      });
+    } catch (e) {
+      return "Invalid date";
+    }
+  };
+
+  // --- Render ---
+  return (
+    <div className="bg-gray-900 text-white min-h-screen p-4 sm:p-8 font-['Inter']">
+      <div className="max-w-4xl mx-auto">
+        
+        <header className="mb-8 text-center">
+          <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-blue-400">
+            TV Show Reminders
+          </h1>
+          <p className="text-lg text-gray-300">
+            Never miss an episode. Add your shows below.
+          </p>
+        </header>
+
+        {/* User ID Display - useful for collaborative debugging */}
+        {userId && (
+          <div className="p-2 bg-gray-800 rounded-md mb-6 text-center text-xs text-gray-400 break-all">
+            <strong>Your User ID:</strong> {userId}
+          </div>
+        )}
+
+        {/* Add Show Form */}
+        <div className="bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
+          <h2 className="text-2xl font-semibold mb-5 text-white">Add New Show</h2>
+          
+          {/* --- Search Form --- */}
+          <form onSubmit={handleSearch} className="mb-6">
+            <label htmlFor="search" className="block text-sm font-medium text-gray-300 mb-1">
+              Search for a Show (via TMDB)
+            </label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                id="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="e.g., Shōgun"
+                className="flex-grow p-3 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="submit"
+                disabled={isSearching}
+                className="p-3 bg-indigo-600 text-white font-semibold rounded-md shadow-md hover:bg-indigo-700 transition duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50"
+              >
+                {isSearching ? 'Searching...' : 'Search'}
+              </button>
+            </div>
+            {TMDB_API_KEY === 'YOUR_TMDB_API_KEY_HERE' && (
+              <p className="text-yellow-400 text-xs mt-2">
+                Search is disabled. Add your TMDB API key to line 22 in the code.
+              </p>
+            )}
+          </form>
+
+          {/* --- Search Results --- */}
+          {searchResults.length > 0 && (
+            <div className="mb-6 max-h-60 overflow-y-auto bg-gray-900 p-4 rounded-md space-y-2">
+              <h4 className="text-lg font-semibold text-white mb-2">Search Results</h4>
+              {searchResults.map((show) => (
+                <div
+                  key={show.id}
+                  className="flex items-center justify-between p-3 bg-gray-700 rounded-md"
+                >
+                  <div className="flex-grow">
+                    <p className="font-semibold text-white">{show.name}</p>
+                    <p className="text-sm text-gray-400">
+                      {show.first_air_date ? `First aired: ${show.first_air_date.split('-')[0]}` : 'No air date'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectShow(show)}
+                    className="ml-4 flex-shrink-0 px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition duration-150"
+                  >
+                    Select
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* --- Manual Add Form --- */}
+          <form onSubmit={handleAddShow} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Show Title */}
+            <div className="md:col-span-3">
+              <label htmlFor="title" className="block text-sm font-medium text-gray-300 mb-1">
+                Show Title
+              </label>
+              <input
+                type="text"
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g., The Mandalorian"
+                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            
+            {/* Air Date */}
+            <div>
+              <label htmlFor="airDate" className="block text-sm font-medium text-gray-300 mb-1">
+                Next Air Date
+              </label>
+              <input
+                type="date"
+                id="airDate"
+                value={airDate}
+                onChange={(e) => setAirDate(e.target.value)}
+                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{ colorScheme: 'dark' }} // Ensures date picker is dark
+              />
+            </div>
+            
+            {/* Air Time */}
+            <div>
+              <label htmlFor="airTime" className="block text-sm font-medium text-gray-300 mb-1">
+                Air Time (Optional)
+              </label>
+              <input
+                type="time"
+                id="airTime"
+                value={airTime}
+                onChange={(e) => setAirTime(e.target.value)}
+                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{ colorScheme: 'dark' }} // Ensures time picker is dark
+              />
+            </div>
+            
+            {/* Submit Button */}
+            <div className="md:col-span-3 flex justify-end items-end">
+              <button
+                type="submit"
+                className="w-full md:w-auto mt-2 p-3 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+              >
+                Add Reminder
+              </button>
+            </div>
+          </form>
+          {error && <p className="text-red-400 mt-4 text-center">{error}</p>}
+        </div>
+
+        {/* Upcoming Shows List */}
+        <div>
+          <h2 className="text-3xl font-semibold mb-6 text-white">
+            Upcoming Shows
+          </h2>
+          {isLoading && (
+            <p className="text-gray-400 text-center text-lg">Loading shows...</p>
+          )}
+          
+          {!isLoading && shows.length === 0 && (
+            <div className="text-center bg-gray-800 p-8 rounded-lg shadow-inner">
+              <p className="text-gray-400 text-lg">
+                You have no upcoming show reminders.
+              </p>
+              <p className="text-gray-500">
+                Use the form above to add one!
+              </p>
+            </div>
+          )}
+          
+          {!isLoading && shows.length > 0 && (
+            <div className="space-y-4">
+              {shows.map((show) => (
+                <div
+                  key={show.id}
+                  className="bg-gray-800 p-5 rounded-lg shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between transition-transform duration-200 hover:scale-[1.02]"
+                >
+                  {/* Show Info */}
+                  <div className="mb-4 sm:mb-0">
+                    <h3 className="text-2xl font-bold text-blue-300">
+                      {show.title}
+                    </h3>
+                    <p className="text-gray-300 text-md">
+                      {formatShowDateTime(show.airDate, show.airTime)}
+                    </p>
+                  </div>
+                  
+                  {/* Action Button */}
+                  <button
+                    onClick={() => handleDeleteShow(show.id)}
+                    className="flex-shrink-0 w-full sm:w-auto px-5 py-2 bg-red-600 text-white font-semibold rounded-md shadow-md hover:bg-red-700 transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                  >
+                    Watched
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
+      </div>
+    </div>
+  );
+}
+
